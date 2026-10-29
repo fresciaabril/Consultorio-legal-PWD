@@ -17,9 +17,10 @@
 
         header {
             background-color: #172b4d;
-            color: white;
+            color: #D4A964;
             padding: 20px;
             text-align: center;
+            font-family: playfair display;
         }
 
         main {
@@ -49,7 +50,7 @@
 
         button {
             padding: 12px 20px;
-            background-color: #172b4d;
+            background-color: #172b4d ;
             color: white;
             border: none;
             border-radius: 5px;
