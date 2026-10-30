@@ -8,7 +8,7 @@
 <body>
 
     <header>
-        <h1>Panel de la abogada</h1>
+        <h1>Panel del abogado</h1>
 
         <form action="/logout" method="POST">
             @csrf
@@ -17,10 +17,11 @@
     </header>
 
     <section>
-        <h2>Mi perfil profesional</h2>
-        <p>Nombre: Dra. María Fernández</p>
-        <p>Profesión: Abogada</p>
-        <p>Atención: Consultas presenciales y virtuales</p>
+        <h1>Dr. Martín Alejandro Fernández</h1>
+        <p>Abogado</p>
+        <p>Estudio Jurídico Fernández</p>
+        <p>Especialidades: Derecho civil, laboral y de familia</p>
+        <p>Atención presencial y virtual</p>
     </section>
 
     <section>
