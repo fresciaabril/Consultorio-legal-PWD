@@ -11,17 +11,17 @@
     <h1>Ingresar a mi cuenta</h1>
     <p>Accedé a tu perfil de cliente.</p>
 
-    <form action="/login" method="POST">
+    <form action="{{ route('login.procesar') }}" method="POST">
         @csrf
 
         <label for="email">Correo electrónico</label>
-        <input type="email" id="email" name="email" required>
+        <input type="email" id="email" name="email" value="{{ old('email') }}" required> <!--old email recupera el email que habia escrito si falla validacion-->
 
         <label for="password">Contraseña</label>
         <input type="password" id="password" name="password" required>
 
         @if ($errors->any())
-            <p>{{ $errors->first() }}</p>
+            <p>{{ $errors->first() }}</p> <!--laravel muestra el primer error que encuentra-->
         @endif
 
         <button type="submit">Ingresar</button>
