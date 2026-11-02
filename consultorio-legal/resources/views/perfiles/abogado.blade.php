@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel Profesional | Estudio Jurídico</title>
+    <title>Perfil Abogado | Estudio Jurídico</title>
     <style>
         * {
             box-sizing: border-box;
@@ -74,60 +74,50 @@
             border-radius: 6px;
             padding: 20px;
             margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
-        .solicitud-item h3 {
+        .solicitud-info h3 {
             color: #1a3b47;
             font-size: 18px;
-            margin-bottom: 5px;
-        }
-
-        .solicitud-item p {
-            color: #555;
-            font-size: 14px;
             margin-bottom: 6px;
         }
 
-        .actions {
-            margin-top: 15px;
-            display: flex;
-            gap: 10px;
-        }
-
-        .btn-aceptar {
-            background-color: #1a3b47;
-            color: white;
-            border: none;
-            padding: 8px 14px;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-
-        .btn-rechazar {
-            background-color: #c5221f;
-            color: white;
-            border: none;
-            padding: 8px 14px;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-
-        .btn-jitsi {
+        .estado-tag {
             display: inline-block;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .estado-aceptada { background-color: #e6f4ea; color: #137333; }
+        .estado-pendiente { background-color: #fef7e0; color: #b06000; }
+        .estado-rechazada { background-color: #fce8e6; color: #c5221f; }
+
+        .btn-detalles {
             background-color: #1a3b47;
             color: #ffffff;
-            padding: 8px 14px;
             text-decoration: none;
+            padding: 10px 18px;
             border-radius: 4px;
-            font-size: 14px;
             font-weight: 600;
+            font-size: 14px;
+            transition: background-color 0.2s;
+        }
+
+        .btn-detalles:hover {
+            background-color: #122a33;
         }
 
         footer {
             text-align: center;
             padding: 20px;
             font-size: 13px;
-            color: #777;
+            color: #777777;
             margin-top: auto;
         }
     </style>
@@ -135,7 +125,7 @@
 <body>
 
     <header>
-        <h1>Panel del Abogado</h1>
+        <h1>Perfil Abogado</h1>
         <form action="/logout" method="POST">
             @csrf
             <button type="submit" class="btn-logout">Cerrar sesión</button>
@@ -144,49 +134,35 @@
 
     <main>
         <div class="card">
-            <h2>Dr. Martín Alejandro Fernández</h2>
-            <p><strong>Especialidades:</strong> Derecho civil, laboral y de familia</p>
-            <p><strong>Modalidad:</strong> Atención presencial y virtual</p>
+            <h2>Mis datos profesionales</h2>
+            <p style="margin-bottom: 8px;"><strong>Nombre:</strong> Dr. {{ auth()->user()->name ?? 'Abogado de Prueba' }}</p>
+            <p><strong>Especialidad:</strong> Derecho Civil y Laboral</p>
         </div>
 
         <div class="card">
-            <h2>Solicitudes recibidas</h2>
+            <h2>Mis consultas</h2>
 
             @forelse ($solicitudes as $solicitud)
                 <div class="solicitud-item">
-                    <h3>{{ $solicitud->nombre ?? 'Cliente' }} ({{ $solicitud->area }})</h3>
-                    <p><strong>Email:</strong> {{ $solicitud->email ?? 'N/A' }}</p>
-                    <p>{{ $solicitud->descripcion }}</p>
-                    <p><strong>Estado:</strong> {{ $solicitud->estado }}</p>
+                    <div class="solicitud-info">
+                        <h3>{{ $solicitud->area }}</h3>
+                        <span class="estado-tag estado-{{ strtolower($solicitud->estado) }}">
+                            {{ $solicitud->estado }}
+                        </span>
+                    </div>
 
-                    @if ($solicitud->estado === 'pendiente')
-                        <form action="/solicitudes/{{ $solicitud->id }}/estado" method="POST" class="actions">
-                            @csrf
-                            <button type="submit" name="estado" value="aceptada" class="btn-aceptar">
-                                Aceptar
-                            </button>
-                            <button type="submit" name="estado" value="rechazada" class="btn-rechazar">
-                                Rechazar
-                            </button>
-                        </form>
-                    @elseif ($solicitud->estado === 'aceptada')
-                        <div style="margin-top: 10px;">
-                            <a href="https://meet.jit.si/ConsultorioLegal-Consulta-{{ $solicitud->id }}" 
-                               target="_blank" 
-                               class="btn-jitsi">
-                                🎥 Unirse a la reunion
-                            </a>
-                        </div>
-                    @endif
+                    <a href="/consultas/{{ $solicitud->id }}" target="_blank" class="btn-detalles">
+                        Ver consulta
+                    </a>
                 </div>
             @empty
-                <p style="color: #777;">No hay solicitudes recibidas.</p>
+                <p style="color: #777;">No hay consultas asignadas por el momento.</p>
             @endforelse
         </div>
     </main>
 
     <footer>
-        Estudio Jurídico · Atención con cita previa
+        Estudio Jurídico · Panel Profesional
     </footer>
 
 </body>
