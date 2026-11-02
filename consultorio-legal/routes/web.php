@@ -6,6 +6,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\SolicitudController;
 use App\Models\Solicitud;
 
+// Página de inicio
 Route::get('/', function () {
     return view('inicio');
 });
@@ -38,9 +39,13 @@ Route::get('/abogado', function () {
 
 // Solicitudes
 Route::get('/solicitudes/crear', [SolicitudController::class, 'create']);
+
 Route::post('/solicitudes', [SolicitudController::class, 'store']);
+
 Route::get('/solicitudes', [SolicitudController::class, 'index']);
+
 Route::patch('/solicitudes/{solicitud}/aceptar', [SolicitudController::class, 'aceptar']);
+
 Route::patch('/solicitudes/{solicitud}/rechazar', [SolicitudController::class, 'rechazar']);
 
 // Demo de Jitsi

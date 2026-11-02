@@ -87,6 +87,8 @@
         <div class="botones">
             <a href="/login">Ya soy cliente</a>
             <a href="/registro">Quiero registrarme</a>
+            <a href="/solicitudes/crear">Solicitar consulta</a> 
+            <a href="/solicitudes">Ver solicitudes</a>
         </div>
     </main>
 
