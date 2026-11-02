@@ -151,8 +151,8 @@
                         </span>
                     </div>
 
-                    <a href="/consultas/{{ $solicitud->id }}" target="_blank" class="btn-detalles">
-                        Ver consulta
+                    <a href="/consultas/abogado/{{ $solicitud->id }}" target="_blank" class="btn-detalles">
+                     Ver consulta
                     </a>
                 </div>
             @empty
