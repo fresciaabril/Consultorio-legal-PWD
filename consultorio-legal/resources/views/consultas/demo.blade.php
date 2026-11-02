@@ -22,7 +22,7 @@
         }
 
         header {
-            background-color: #172b4d;
+            background-color: #1a3b47;
             color: white;
             padding: 20px;
             text-align: center;
@@ -79,7 +79,7 @@
 
         button#iniciar {
             padding: 12px 20px;
-            background-color: #172b4d ;
+            background-color: #1a3b47 ;
             color: white;
             border: none;
             border-radius: 5px;
@@ -116,6 +116,28 @@
             color: #777777;
             margin-top: auto;
         }
+
+        .btn-volver {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: #ffffff;
+            padding: 8px 16px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s ease-in-out;
+            cursor: pointer;
+        }
+
+        .btn-volver:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.6);
+            transform: translateY(-1px);
+        }
     </style>
 </head>
 
@@ -123,7 +145,13 @@
 
     <header>
         <h1>Estudio Jurídico</h1>
-        <a href="javascript:window.close()" class="btn-volver">✖ Cerrar ventana</a>
+        <a href="javascript:window.close()" class="btn-volver">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+            Cerrar ventana
+        </a>
     </header>
 
     <main>
