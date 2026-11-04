@@ -31,16 +31,15 @@
 <body>
     <header>
         <h1>Panel Profesional Abogado</h1>
-        <a href="javascript:window.close()" class="btn-volver">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-            Cerrar ventana
+        <a href="{{ route('abogado') }}" class="btn-volver">
+            ← Volver a mi perfil
         </a>
     </header>
 
     <main>
         <div class="card">
             <h2>Expediente de Consulta #{{ $solicitud->id }}</h2>
-            <p style="margin-bottom: 8px;"><strong>Cliente:</strong> {{ $solicitud->cliente }}</p>
+            <p style="margin-bottom: 8px;"><strong>Cliente:</strong> {{ $solicitud->nombre }}</p>
             <p style="margin-bottom: 8px;"><strong>Área:</strong> {{ $solicitud->area }}</p>
             <p style="margin-bottom: 8px;">
                 <strong>Estado:</strong> 
@@ -78,10 +77,31 @@
             <div class="card" style="background-color: #fff9e6; border: 1px solid #ffe399;">
                 <h3 style="color: #8a6d3b; margin-bottom: 10px;">Acciones de Gestión</h3>
                 <p style="color: #8a6d3b; margin-bottom: 15px;">Evaluá la solicitud para aceptarla o denegarla:</p>
-                <div>
-                    <button type="button" class="btn-accion btn-aceptar" onclick="alert('Consulta Aceptada')">Aceptar consulta</button>
-                    <button type="button" class="btn-accion btn-rechazar" onclick="alert('Consulta Rechazada')">Rechazar consulta</button>
+                
+                
+                <div style="display: flex; gap: 10px;">
+
+                    <!-- ACEPTAR SOLICITUD -->
+                    <form action="/solicitudes/{{ $solicitud->id }}/aceptar" method="POST">
+                        @csrf
+                        @method('PATCH')
+
+                        <button type="submit" class="btn-accion btn-aceptar">
+                            Aceptar consulta
+                        </button>
+                    </form>
+
+                    <!-- RECHAZAR SOLICITUD -->
+                    <form action="/solicitudes/{{ $solicitud->id }}/rechazar" method="POST">
+                        @csrf
+                        @method('PATCH')
+
+                        <button type="submit" class="btn-accion btn-rechazar">
+                            Rechazar consulta
+                        </button>
+                    </form>
                 </div>
+
             </div>
         @endif
     </main>

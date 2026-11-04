@@ -145,14 +145,24 @@
             @forelse ($solicitudes as $solicitud)
                 <div class="solicitud-item">
                     <div class="solicitud-info">
-                        <h3>{{ $solicitud->area }}</h3>
-                        <span class="estado-tag estado-{{ strtolower($solicitud->estado) }}">
-                            {{ $solicitud->estado }}
-                        </span>
-                    </div>
 
-                    <a href="/consultas/abogado/{{ $solicitud->id }}" target="_blank" class="btn-detalles">
-                     Ver consulta
+            <!-- Nombre de la clienta -->
+            <h3>{{ $solicitud->nombre }}</h3>
+
+            <!-- Tipo de area -->
+            <p style="margin-bottom: 8px;">
+                <strong>Area:</strong> {{ ucfirst($solicitud->area) }}
+            </p>
+
+            <!-- Estado de la solicitud -->
+            <span class="estado-tag estado-{{ strtolower($solicitud->estado) }}">
+                {{ $solicitud->estado }}
+            </span>
+
+        </div>
+
+                    <a href="/consultas/abogado/{{ $solicitud->id }}" class="btn-detalles">
+                        ver consulta
                     </a>
                 </div>
             @empty

@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -16,6 +15,9 @@
             font-family: Arial, sans-serif;
             color: #263238;
             background-color: #f5f3ef;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
 
         header {
@@ -30,9 +32,22 @@
 
         main {
             max-width: 900px;
+            width: 100%;
             margin: 70px auto;
             padding: 35px;
             text-align: center;
+            flex-grow: 1;
+        }
+
+        main h2 {
+            color: #183746;
+            font-size: 28px;
+            margin-bottom: 25px;
+        }
+
+        main p {
+            line-height: 1.7;
+            font-size: 16px;
         }
 
         .botones {
@@ -50,6 +65,7 @@
             font-weight: bold;
             background-color: #183746;
             color: white;
+            transition: background-color 0.2s;
         }
 
         .botones a:hover {
@@ -63,6 +79,7 @@
         }
     </style>
 </head>
+
 <body>
 
     <header>
@@ -71,25 +88,31 @@
     </header>
 
     <main>
+
         <h2>Bienvenido/a</h2>
 
         <p>
-            Soy la Dra. María Fernández, abogada.
+            Soy el Dr. Martín Alejandro Fernández, abogado.
             Mi objetivo es brindarte asesoramiento jurídico
             personalizado y acompañarte durante tu caso.
         </p>
 
         <p>
-            Desde esta plataforma vas a poder gestionar tus consultas
-            y acceder a una reunión virtual cuando corresponda.
+            Desde esta plataforma vas a poder gestionar tus consultas,
+            consultar el estado de tus solicitudes y acceder a reuniones
+            virtuales cuando corresponda.
         </p>
 
         <div class="botones">
-            <a href="/login">Ya soy cliente</a>
-            <a href="/registro">Quiero registrarme</a>
-            <a href="/solicitudes/crear">Solicitar consulta</a> 
-            <a href="/solicitudes">Ver solicitudes</a>
+
+            <!-- CLIENTES QUE YA TIENEN PERFIL -->
+            <a href="{{ route('login') }}">Soy cliente</a>
+
+            <!-- PERSONAS QUE QUIEREN SOLICITAR UNA CONSULTA -->
+            <a href="/solicitudes/crear">Solicitar consulta</a>
+
         </div>
+
     </main>
 
     <footer>

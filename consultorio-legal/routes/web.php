@@ -1,15 +1,18 @@
+
 <?php
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\SolicitudController;
-use App\Http\Controllers\ConsultorioController;
 use App\Models\Solicitud;
+use App\Http\Controllers\RegistroController;
 
-// Página de inicio
+// PÁGINA DE INICIO
+
 Route::get('/', function () {
     return view('inicio');
 });
+
 
 // LOGIN
 
@@ -28,112 +31,132 @@ Route::post('/logout', [AuthController::class, 'cerrarSesion'])
 // PERFIL DEL CLIENTE
 
 Route::get('/perfil', function () {
+
+    // Solo pueden ingresar los clientes
+    abort_unless(auth()->user()->rol === 'cliente', 403);
+
+    // Buscamos las solicitudes del cliente según su email
     $solicitudes = Solicitud::where(
         'email',
         auth()->user()->email
     )->latest()->get();
 
     return view('perfiles.cliente', compact('solicitudes'));
+
 })->middleware('auth')->name('perfil');
 
 
 // PANEL DEL ABOGADO
 
 Route::get('/abogado', function () {
-    return view('perfiles.abogado');
+
+    // Solo puede ingresar el abogado
+    abort_unless(auth()->user()->rol === 'abogado', 403);
+
+    // Obtenemos todas las solicitudes reales
+    $solicitudes = Solicitud::latest()->get();
+
+    return view('perfiles.abogado', compact('solicitudes'));
+
 })->middleware('auth')->name('abogado');
 
 
 // SOLICITUDES - MALE
 
+// Formulario para nuevos clientes
 Route::get('/solicitudes/crear', [SolicitudController::class, 'create']);
 
 Route::post('/solicitudes', [SolicitudController::class, 'store']);
 
-Route::get('/solicitudes', [SolicitudController::class, 'index']);
+// Listado de solicitudes: solo abogado
+Route::get('/solicitudes', function () {
 
-Route::patch('/solicitudes/{solicitud}/aceptar', [SolicitudController::class, 'aceptar']);
+    abort_unless(auth()->user()->rol === 'abogado', 403);
 
-Route::patch('/solicitudes/{solicitud}/rechazar', [SolicitudController::class, 'rechazar']);
+    return app(SolicitudController::class)->index();
+
+})->middleware('auth');
+
+// Aceptar solicitud: solo abogado
+Route::patch('/solicitudes/{solicitud}/aceptar', function (Solicitud $solicitud) {
+
+    abort_unless(auth()->user()->rol === 'abogado', 403);
+
+    return app(SolicitudController::class)->aceptar($solicitud);
+
+})->middleware('auth');
+
+// Rechazar solicitud: solo abogado
+Route::patch('/solicitudes/{solicitud}/rechazar', function (Solicitud $solicitud) {
+
+    abort_unless(auth()->user()->rol === 'abogado', 403);
+
+    return app(SolicitudController::class)->rechazar($solicitud);
+
+})->middleware('auth');
 
 
-// PERFILES DE PRUEBA - FRE
-
-Route::get('/perfil/cliente', [ConsultorioController::class, 'cliente']);
-
-Route::get('/perfil/abogado', [ConsultorioController::class, 'abogado']);
-
-
-// CONSULTAS DEL CLIENTE - FRE
+// DETALLE DE CONSULTA DEL CLIENTE
 
 Route::get('/consultas/cliente/{id}', function ($id) {
 
-    $consultasSimuladas = [
-        1 => (object)[
-            'id' => 1,
-            'cliente' => 'María García',
-            'area' => 'Derecho Civil',
-            'descripcion' => 'Consulta sobre alquiler de vivienda y renovación.',
-            'estado' => 'aceptada'
-        ],
-        2 => (object)[
-            'id' => 2,
-            'cliente' => 'Juan Pérez',
-            'area' => 'Derecho Laboral',
-            'descripcion' => 'Duda sobre liquidación final.',
-            'estado' => 'pendiente'
-        ]
-    ];
+    abort_unless(auth()->user()->rol === 'cliente', 403);
 
-    $solicitud = $consultasSimuladas[$id] ?? (object)[
-        'id' => $id,
-        'cliente' => 'Cliente',
-        'area' => 'General',
-        'descripcion' => 'Sin detalle',
-        'estado' => 'pendiente'
-    ];
+    // Buscamos la solicitud real y verificamos su email
+    $solicitud = Solicitud::where('email', auth()->user()->email)
+        ->findOrFail($id);
 
     return view('consultas.ver_cliente', compact('solicitud'));
 
-});
+})->middleware('auth');
 
 
-// CONSULTAS DEL ABOGADO - FRE
+// DETALLE DE CONSULTA DEL ABOGADO
 
 Route::get('/consultas/abogado/{id}', function ($id) {
 
-    $consultasSimuladas = [
-        1 => (object)[
-            'id' => 1,
-            'cliente' => 'María García',
-            'area' => 'Derecho Civil',
-            'descripcion' => 'Consulta sobre alquiler de vivienda y renovación.',
-            'estado' => 'aceptada'
-        ],
-        2 => (object)[
-            'id' => 2,
-            'cliente' => 'Juan Pérez',
-            'area' => 'Derecho Laboral',
-            'descripcion' => 'Duda sobre liquidación final.',
-            'estado' => 'pendiente'
-        ]
-    ];
+    abort_unless(auth()->user()->rol === 'abogado', 403);
 
-    $solicitud = $consultasSimuladas[$id] ?? (object)[
-        'id' => $id,
-        'cliente' => 'Cliente',
-        'area' => 'General',
-        'descripcion' => 'Sin detalle',
-        'estado' => 'pendiente'
-    ];
+    // Buscamos la solicitud real en Aiven
+    $solicitud = Solicitud::findOrFail($id);
 
     return view('consultas.ver_abogado', compact('solicitud'));
 
-});
+})->middleware('auth');
 
 
 // DEMO DE JITSI
 
 Route::get('/consulta-demo', function () {
+
     return view('consultas.demo');
-});
+
+})->middleware('auth');
+
+
+// SEGUIMIENTO DE SOLICITUDES
+
+// Consultar el estado de una solicitud mediante su token
+Route::get('/solicitudes/seguimiento/{token}',
+    [SolicitudController::class, 'seguimiento'])
+    ->name('solicitudes.seguimiento');
+
+// Solicitar el código de verificación por correo
+Route::post('/solicitudes/seguimiento/{token}/enviar-codigo',
+    [SolicitudController::class, 'enviarCodigo'])
+    ->middleware('throttle:3,10')
+    ->name('solicitudes.enviarCodigo');
+
+// NUEVA RUTA: verificar el código de 6 dígitos
+Route::post('/solicitudes/seguimiento/{token}/verificar-codigo',
+    [SolicitudController::class, 'verificarCodigo'])
+    ->middleware('throttle:5,10')
+    ->name('solicitudes.verificarCodigo');
+
+// Mostrar el formulario de registro
+Route::get('/registro', [RegistroController::class, 'mostrarRegistro'])
+    ->name('registro.mostrar');
+
+// Guardar el nuevo cliente en Aiven
+Route::post('/registro', [RegistroController::class, 'guardarRegistro'])
+    ->name('registro.guardar');
