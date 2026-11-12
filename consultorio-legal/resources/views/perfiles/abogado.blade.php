@@ -146,7 +146,7 @@
                 <div class="solicitud-item">
                     <div class="solicitud-info">
 
-            <!-- Nombre de la clienta -->
+            <!-- Nombre del cliente -->
             <h3>{{ $solicitud->nombre }}</h3>
 
             <!-- Tipo de area -->

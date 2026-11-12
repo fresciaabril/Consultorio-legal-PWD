@@ -7,24 +7,18 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::table('solicitudes', function (Blueprint $table) {
 
             // Agregamos un token para identificar cada solicitud
             $table->string('token_seguimiento', 64)
-                  ->nullable()
-                  ->unique();
+                    ->nullable()
+                    ->unique();
 
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::table('solicitudes', function (Blueprint $table) {

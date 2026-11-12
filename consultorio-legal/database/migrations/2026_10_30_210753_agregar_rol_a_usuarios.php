@@ -14,7 +14,7 @@ return new class extends Migration
         });
     }
 
-    // Eliminar el campo role si se revierte la migración
+    // Eliminar el campo rol si se revierte la migración
     public function down(): void
     {
         Schema::table('users', function (Blueprint $table) {

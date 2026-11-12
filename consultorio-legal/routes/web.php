@@ -1,4 +1,3 @@
-
 <?php
 
 use Illuminate\Support\Facades\Route;
@@ -8,14 +7,12 @@ use App\Models\Solicitud;
 use App\Http\Controllers\RegistroController;
 
 // PÁGINA DE INICIO
-
 Route::get('/', function () {
     return view('inicio');
 });
 
 
 // LOGIN
-
 Route::get('/login', [AuthController::class, 'mostrarLogin'])
     ->name('login');
 
@@ -29,7 +26,6 @@ Route::post('/logout', [AuthController::class, 'cerrarSesion'])
 
 
 // PERFIL DEL CLIENTE
-
 Route::get('/perfil', function () {
 
     // Solo pueden ingresar los clientes
@@ -47,7 +43,6 @@ Route::get('/perfil', function () {
 
 
 // PANEL DEL ABOGADO
-
 Route::get('/abogado', function () {
 
     // Solo puede ingresar el abogado
@@ -97,7 +92,6 @@ Route::patch('/solicitudes/{solicitud}/rechazar', function (Solicitud $solicitud
 
 
 // DETALLE DE CONSULTA DEL CLIENTE
-
 Route::get('/consultas/cliente/{id}', function ($id) {
 
     abort_unless(auth()->user()->rol === 'cliente', 403);
@@ -112,7 +106,6 @@ Route::get('/consultas/cliente/{id}', function ($id) {
 
 
 // DETALLE DE CONSULTA DEL ABOGADO
-
 Route::get('/consultas/abogado/{id}', function ($id) {
 
     abort_unless(auth()->user()->rol === 'abogado', 403);
@@ -126,12 +119,7 @@ Route::get('/consultas/abogado/{id}', function ($id) {
 
 
 // DEMO DE JITSI
-
-Route::get('/consulta-demo', function () {
-
-    return view('consultas.demo');
-
-})->middleware('auth');
+Route::get('/consulta-demo', function () {return view('consultas.demo');})->middleware('auth');
 
 
 // SEGUIMIENTO DE SOLICITUDES

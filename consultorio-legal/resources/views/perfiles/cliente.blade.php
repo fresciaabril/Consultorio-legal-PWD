@@ -152,7 +152,7 @@
                             {{ $solicitud->estado }}
                         </span>
                     </div>
-                    <a href="/consultas/cliente/{{ $solicitud->id }}" target="_blank" class="btn-detalles">
+                    <a href="/consultas/cliente/{{ $solicitud->id }}"  class="btn-detalles">
                         Ver detalles
                     </a>
                 </div>
