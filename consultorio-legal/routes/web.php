@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Http\Request; // Necesario para procesar los datos enviados desde el formulario de perfil
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\SolicitudController;
 use App\Models\Solicitud;
@@ -54,6 +55,46 @@ Route::get('/abogado', function () {
     return view('perfiles.abogado', compact('solicitudes'));
 
 })->middleware('auth')->name('abogado');
+
+
+// PERFIL EDITABLE DEL ABOGADO (Ubicado aquí, protegido con auth y rol abogado)
+Route::get('/abogado/perfil', function () {
+
+    // Solo puede ingresar el abogado
+    abort_unless(auth()->user()->rol === 'abogado', 403);
+
+    $usuario = auth()->user();
+
+    // Carga los datos guardados en sesión o usa por defecto los datos profesionales
+    $perfil = session('perfil_abogado', [
+        'nombre' => $usuario->name ?? 'Dr. Martín Alejandro Fernández',
+        'especialidades' => 'Derecho Civil, Laboral y de Familia',
+        'email' => $usuario->email ?? 'abogado@estudiojuridico.com',
+        'descripcion_inicio' => 'Abogado egresado con experiencia en asesoramiento integral, resolución de conflictos civiles, reclamos laborales y derecho de familia. Atención personalizada presencial y mediante consultas virtuales.'
+    ]);
+
+    return view('perfiles.editar', compact('perfil'));
+
+})->middleware('auth')->name('abogado.perfil');
+
+Route::put('/abogado/perfil', function (Request $request) {
+
+    // Solo puede guardar cambios el abogado
+    abort_unless(auth()->user()->rol === 'abogado', 403);
+
+    $datos = $request->validate([
+        'nombre' => 'required|string|max:120',
+        'especialidades' => 'required|string|max:200',
+        'email' => 'required|email',
+        'descripcion_inicio' => 'required|string|max:1000',
+    ]);
+
+    // Guarda los datos en la sesión para reflejarlos en el perfil y en la página de inicio
+    session(['perfil_abogado' => $datos]);
+
+    return redirect()->route('abogado.perfil')->with('exito', 'Tus datos y la descripción del inicio se actualizaron correctamente.');
+
+})->middleware('auth')->name('abogado.perfil.actualizar');
 
 
 // SOLICITUDES - MALE
@@ -148,3 +189,10 @@ Route::get('/registro', [RegistroController::class, 'mostrarRegistro'])
 // Guardar el nuevo cliente en Aiven
 Route::post('/registro', [RegistroController::class, 'guardarRegistro'])
     ->name('registro.guardar');
+
+
+// Ruta temporal para probar la reserva de turnos desde cliente.blade.php
+Route::post('/turnos', function (Request $request) {
+    return back()->with('success', 'Turno reservado de prueba para el ' . $request->fecha . ' a las ' . $request->hora);
+});
+/**No aparece en mis turnos agendados ya q son de prueba */
