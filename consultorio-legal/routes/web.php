@@ -5,6 +5,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\SolicitudController;
 use App\Models\Solicitud;
 use App\Http\Controllers\RegistroController;
+use App\Http\Controllers\TurnoController;
 
 // PÁGINA DE INICIO
 Route::get('/', function () {
@@ -148,3 +149,18 @@ Route::get('/registro', [RegistroController::class, 'mostrarRegistro'])
 // Guardar el nuevo cliente en Aiven
 Route::post('/registro', [RegistroController::class, 'guardarRegistro'])
     ->name('registro.guardar');
+
+//cuando un usuario visita /turnos Laravel ejecuta el método index
+Route::get('/turnos', [TurnoController::class, 'index'])
+    ->middleware('auth')
+    ->name('turnos.index');
+
+    //ruta cancelar turno
+Route::delete('/turnos/{turno}', [TurnoController::class, 'destroy'])
+    ->middleware('auth')
+    ->name('turnos.destroy');
+
+    //reservar turno
+Route::post('/turnos', [TurnoController::class, 'store'])
+    ->middleware('auth')
+    ->name('turnos.store');
