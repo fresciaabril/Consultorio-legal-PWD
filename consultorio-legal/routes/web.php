@@ -1,7 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use Illuminate\Http\Request; // Necesario para procesar los datos enviados desde el formulario de perfil
+use Illuminate\Http\Request; // Necesario para procesar los datos enviados desde los formularios
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\SolicitudController;
 use App\Models\Solicitud;
@@ -38,7 +38,10 @@ Route::get('/perfil', function () {
         auth()->user()->email
     )->latest()->get();
 
-    return view('perfiles.cliente', compact('solicitudes'));
+    // Cargamos los turnos simulados guardados en sesión mientras Agus termina TurnoController
+    $turnos = session('turnos_prueba', []);
+
+    return view('perfiles.cliente', compact('solicitudes', 'turnos'));
 
 })->middleware('auth')->name('perfil');
 
@@ -57,7 +60,7 @@ Route::get('/abogado', function () {
 })->middleware('auth')->name('abogado');
 
 
-// PERFIL EDITABLE DEL ABOGADO (Ubicado aquí, protegido con auth y rol abogado)
+// PERFIL EDITABLE DEL ABOGADO (Protegido con auth y rol abogado)
 Route::get('/abogado/perfil', function () {
 
     // Solo puede ingresar el abogado
@@ -160,7 +163,9 @@ Route::get('/consultas/abogado/{id}', function ($id) {
 
 
 // DEMO DE JITSI
-Route::get('/consulta-demo', function () {return view('consultas.demo');})->middleware('auth');
+Route::get('/consulta-demo', function () {
+    return view('consultas.demo');
+})->middleware('auth');
 
 
 // SEGUIMIENTO DE SOLICITUDES
@@ -176,7 +181,7 @@ Route::post('/solicitudes/seguimiento/{token}/enviar-codigo',
     ->middleware('throttle:3,10')
     ->name('solicitudes.enviarCodigo');
 
-// NUEVA RUTA: verificar el código de 6 dígitos
+// Verificar el código de 6 dígitos
 Route::post('/solicitudes/seguimiento/{token}/verificar-codigo',
     [SolicitudController::class, 'verificarCodigo'])
     ->middleware('throttle:5,10')
@@ -191,8 +196,29 @@ Route::post('/registro', [RegistroController::class, 'guardarRegistro'])
     ->name('registro.guardar');
 
 
-// Ruta temporal para probar la reserva de turnos desde cliente.blade.php
+// RUTAS TEMPORALES DE PRUEBA PARA TURNOS (Reemplazar luego por TurnoController de Agus)
 Route::post('/turnos', function (Request $request) {
-    return back()->with('success', 'Turno reservado de prueba para el ' . $request->fecha . ' a las ' . $request->hora);
-});
-/**No aparece en mis turnos agendados ya q son de prueba */
+    $turnos = session('turnos_prueba', []);
+
+    $turnos[] = (object)[
+        'id' => count($turnos) + 1,
+        'solicitud_id' => $request->solicitud_id,
+        'fecha' => $request->fecha,
+        'hora' => $request->hora,
+    ];
+
+    session(['turnos_prueba' => $turnos]);
+
+    return back()->with('success', 'Turno agendado para el ' . $request->fecha . ' a las ' . $request->hora);
+})->middleware('auth');
+
+Route::patch('/turnos/{id}/cancelar', function ($id) {
+    $turnos = collect(session('turnos_prueba', []))
+        ->reject(fn($t) => $t->id == $id)
+        ->values()
+        ->all();
+
+    session(['turnos_prueba' => $turnos]);
+
+    return back()->with('success', 'El turno fue cancelado correctamente.');
+})->middleware('auth');
