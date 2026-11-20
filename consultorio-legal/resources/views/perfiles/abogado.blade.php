@@ -137,6 +137,19 @@
             <h2>Mis datos profesionales</h2>
             <p style="margin-bottom: 8px;"><strong>Nombre:</strong> Dr. {{ auth()->user()->name ?? 'Abogado de Prueba' }}</p>
             <p><strong>Especialidad:</strong> Derecho Civil y Laboral</p>
+</div>
+
+        <div class="card">
+            <h2>Mi agenda</h2>
+
+            <p style="margin-bottom: 20px;">
+                Configurá tus horarios de atención y bloqueos de agenda.
+            </p>
+
+            <a href="{{ route('abogado.agenda') }}"
+            class="btn-detalles">
+                Configurar mi agenda
+            </a>
         </div>
 
         <div class="card">

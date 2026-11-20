@@ -7,6 +7,17 @@ use App\Models\BloqueoAgenda;
 
 class BloqueoAgendaController extends Controller
 {
+    public function index()
+    {
+        abort_unless(auth()->user()->rol === 'abogado', 403);
+
+        $bloqueos = BloqueoAgenda::where('user_id', auth()->id())
+            ->orderBy('fecha')
+            ->orderBy('hora_inicio')
+            ->get();
+
+        return response()->json($bloqueos);
+    }
     public function store(Request $request){
         //solo el abogado puede bloquear su agenda
         abort_unless(auth()->user()->rol === 'abogado', 403);
@@ -52,5 +63,19 @@ class BloqueoAgendaController extends Controller
             'mensaje' => 'Bloqueo de agenda guardado correctamente.',
             'bloqueo' => $bloqueo
         ], 201);
+    }
+
+    public function destroy($id)
+    {
+        abort_unless(auth()->user()->rol === 'abogado', 403);
+
+        $bloqueo = BloqueoAgenda::where('user_id', auth()->id())
+            ->findOrFail($id);
+
+        $bloqueo->delete();
+
+        return response()->json([
+            'mensaje' => 'Bloqueo eliminado correctamente.'
+        ]);
     }
 }

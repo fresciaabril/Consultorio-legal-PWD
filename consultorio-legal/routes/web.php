@@ -166,3 +166,24 @@ route::get('/abogado/disponibilidades',[DisponibilidadController::class,'index']
 Route::post('/abogado/bloqueos', [BloqueoAgendaController::class, 'store'])
 ->middleware('auth') //exige que el usuario haya iniciado sesion
 ->name('abogado.bloqueos.store');
+
+Route::get('/abogado/bloqueos', [BloqueoAgendaController::class, 'index'])
+    ->middleware('auth')
+    ->name('abogado.bloqueos');
+
+Route::get('/abogado/horarios-libres', [DisponibilidadController::class, 'horariosLibres'])
+    ->middleware('auth')
+    ->name('abogado.horarios-libres');
+
+Route::get('/abogado/agenda', [DisponibilidadController::class, 'configurar'])
+    ->middleware('auth')
+    ->name('abogado.agenda');
+
+Route::delete('/abogado/disponibilidades/{id}', [DisponibilidadController::class, 'destroy'])
+    ->middleware('auth')
+    ->name('abogado.disponibilidades.destroy');
+
+Route::delete('/abogado/bloqueos/{id}', [BloqueoAgendaController::class, 'destroy'])
+    ->middleware('auth')
+    ->name('abogado.bloqueos.destroy');
+

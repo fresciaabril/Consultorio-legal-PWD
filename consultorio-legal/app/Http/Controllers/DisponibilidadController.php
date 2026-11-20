@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Disponibilidad;
+use App\Services\AgendaService;
 
 class DisponibilidadController extends Controller
 {
@@ -59,6 +60,47 @@ class DisponibilidadController extends Controller
         return response()->json([
             'mensaje' => 'Disponibilidad guardada correctamente.',
             'disponibilidad' => $disponibilidad], 201);
+    }
+
+
+    public function horariosLibres(Request $request, AgendaService $agendaService)
+    {
+        $datos = $request->validate([
+            'fecha' => 'required|date_format:Y-m-d|after_or_equal:today',
+        ]);
+
+        abort_unless(auth()->user()->rol === 'abogado', 403);
+
+        $horarios = $agendaService->obtenerHorariosLibres(
+            auth()->id(),
+            $datos['fecha']
+        );
+
+        return response()->json([
+            'fecha' => $datos['fecha'],
+            'horarios_libres' => $horarios,
+        ]);
+    }
+
+    public function configurar()
+    {
+        abort_unless(auth()->user()->rol === 'abogado', 403);
+
+        return view('agenda.configurar');
+    }
+
+    public function destroy($id)
+    {
+        abort_unless(auth()->user()->rol === 'abogado', 403);
+
+        $disponibilidad = Disponibilidad::where('user_id', auth()->id())
+            ->findOrFail($id);
+
+        $disponibilidad->delete();
+
+        return response()->json([
+            'mensaje' => 'Disponibilidad eliminada correctamente.'
+        ]);
     }
 }
   
