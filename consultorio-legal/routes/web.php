@@ -5,6 +5,8 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\SolicitudController;
 use App\Models\Solicitud;
 use App\Http\Controllers\RegistroController;
+use App\Http\Controllers\DisponibilidadController;
+use App\Http\Controllers\BloqueoAgendaController;
 
 // PÁGINA DE INICIO
 Route::get('/', function () {
@@ -148,3 +150,19 @@ Route::get('/registro', [RegistroController::class, 'mostrarRegistro'])
 // Guardar el nuevo cliente en Aiven
 Route::post('/registro', [RegistroController::class, 'guardarRegistro'])
     ->name('registro.guardar');
+
+//Disponibilidad del abogado - male
+//consultar los horarios de atencion configurados
+route::get('/abogado/disponibilidades',[DisponibilidadController::class,'index'])
+    ->middleware('auth')
+    ->name('abogado.disponibilidades');
+
+//guardamos un horario de atencion del abogado
+    Route::post('/abogado/disponibilidades', [DisponibilidadController::class, 'store'])
+    ->middleware('auth')
+    ->name('abogado.disponibilidades.store');
+
+//guardar un bloqueo de agenda del abogado
+Route::post('/abogado/bloqueos', [BloqueoAgendaController::class, 'store'])
+->middleware('auth') //exige que el usuario haya iniciado sesion
+->name('abogado.bloqueos.store');
