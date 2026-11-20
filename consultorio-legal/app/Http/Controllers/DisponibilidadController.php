@@ -65,22 +65,43 @@ class DisponibilidadController extends Controller
 
     public function horariosLibres(Request $request, AgendaService $agendaService)
     {
+        // Solo clientes y abogados autenticados
+        $usuario = $request->user();
+
+        abort_unless(
+            in_array($usuario->rol, ['cliente', 'abogado']),
+            403
+        );
+
+        // Validamos la fecha y el abogado seleccionado
         $datos = $request->validate([
             'fecha' => 'required|date_format:Y-m-d|after_or_equal:today',
+            'abogado_id' => 'required|integer|exists:users,id',
         ]);
 
-        abort_unless(auth()->user()->rol === 'abogado', 403);
+        // Comprobamos que realmente sea un abogado
+        $abogado = \App\Models\User::findOrFail($datos['abogado_id']);
 
+        if ($abogado->rol !== 'abogado') {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'abogado_id' => 'El usuario seleccionado no es un abogado.',
+            ]);
+        }
+
+        // Consultamos los horarios del abogado seleccionado
         $horarios = $agendaService->obtenerHorariosLibres(
-            auth()->id(),
-            $datos['fecha']
+            $abogado->id,
+            $datos['fecha'],
+            120
         );
 
         return response()->json([
             'fecha' => $datos['fecha'],
+            'abogado_id' => $abogado->id,
             'horarios_libres' => $horarios,
         ]);
     }
+
 
     public function configurar()
     {
@@ -103,4 +124,3 @@ class DisponibilidadController extends Controller
         ]);
     }
 }
-  
