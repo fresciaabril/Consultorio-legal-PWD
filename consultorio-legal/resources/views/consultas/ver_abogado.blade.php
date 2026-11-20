@@ -51,58 +51,79 @@
             </p>
         </div>
 
-        @if ($solicitud->estado === 'aceptada')
-            <div class="card">
-                <h2>Sala de Audiencia / Videollamada</h2>
-                <p id="mensaje" style="margin-bottom: 15px;">Presioná para iniciar la sesión con el cliente.</p>
-                <button id="iniciar" class="btn-accion btn-aceptar">Iniciar videollamada</button>
-                <div id="jitsi-container"></div>
-            </div>
+        @if (isset($solicitud->estado) && $solicitud->estado === 'aceptada')
+    @php
+        //Tomamos la fecha y hora del turno 
+        $fechaHoraTurno = \Carbon\Carbon::parse($turno->fecha_hora ?? '2026-11-13 19:15:00');
+        
+        //desde 10 minutos antes hasta 1 hora después 
+        $habilitadoDesde = $fechaHoraTurno->copy()->subMinutes(10);
+        $habilitadoHasta = $fechaHoraTurno->copy()->addMinutes(60);
+        
+        //Verificamos si la hora actual está dentro de ese rango
+        $puedeUnirse = now()->between($habilitadoDesde, $habilitadoHasta);
+    @endphp
 
+    <section class="informacion">
+        <h2>Reunión en Vivo</h2>
+        <p style="margin-bottom: 10px;">
+            <strong>Turno programado:</strong> {{ $fechaHoraTurno->format('d/m/Y \a \l\a\s H:i') }} hs
+        </p>
+
+        @if ($puedeUnirse)
+            <p id="mensaje">La sala ya está habilitada. Presioná el botón para iniciar la consulta.</p>
+            <button id="iniciar">🎥 Iniciar videollamada</button>
+            <div id="jitsi-container"></div>
+
+            <!-- solo se carga si ya es hora del turno -->
             <script src="https://meet.jit.si/external_api.js"></script>
             <script>
                 let api = null;
-                document.getElementById('iniciar').addEventListener('click', function () {
+                const boton = document.getElementById('iniciar');
+                const mensaje = document.getElementById('mensaje');
+                const contenedor = document.getElementById('jitsi-container');
+
+                boton.addEventListener('click', function () {
                     if (api !== null) return;
-                    this.disabled = true;
-                    document.getElementById('mensaje').textContent = 'Iniciando sala...';
-                    api = new JitsiMeetExternalAPI('meet.jit.si', {
-                        roomName: 'ConsultorioLegal-Consulta-{{ $solicitud->id }}',
-                        width: '100%', height: 600,
-                        parentNode: document.getElementById('jitsi-container'), lang: 'es'
+                    boton.disabled = true;
+                    mensaje.textContent = 'Conectando con Jitsi...';
+
+                    const opciones = {
+                        roomName: 'ConsultorioLegal-Consulta-{{ $solicitud->id ?? $id ?? 1 }}',
+                        width: '100%',
+                        height: 600,
+                        parentNode: contenedor,
+                        lang: 'es',
+                        userInfo: {
+                            displayName: '{{ auth()->user()->name ?? "Usuario" }}'
+                        }
+                    };
+
+                    api = new JitsiMeetExternalAPI('meet.jit.si', opciones);
+
+                    api.addListener('videoConferenceJoined', function () {
+                        mensaje.textContent = 'Ya estás dentro de la videollamada.';
+                    });
+                    api.addListener('videoConferenceLeft', function () {
+                        mensaje.textContent = 'Saliste de la videollamada.';
+                    });
+                    api.addListener('readyToClose', function () {
+                        api = null;
+                        boton.disabled = false;
+                        mensaje.textContent = 'Presioná el botón para iniciar la consulta.';
                     });
                 });
             </script>
-        @elseif ($solicitud->estado === 'pendiente')
-            <div class="card" style="background-color: #fff9e6; border: 1px solid #ffe399;">
-                <h3 style="color: #8a6d3b; margin-bottom: 10px;">Acciones de Gestión</h3>
-                <p style="color: #8a6d3b; margin-bottom: 15px;">Evaluá la solicitud para aceptarla o denegarla:</p>
-                
-                
-                <div style="display: flex; gap: 10px;">
-
-                    <!-- ACEPTAR SOLICITUD -->
-                    <form action="/solicitudes/{{ $solicitud->id }}/aceptar" method="POST">
-                        @csrf
-                        @method('PATCH')
-
-                        <button type="submit" class="btn-accion btn-aceptar">
-                            Aceptar consulta
-                        </button>
-                    </form>
-
-                    <!-- RECHAZAR SOLICITUD -->
-                    <form action="/solicitudes/{{ $solicitud->id }}/rechazar" method="POST">
-                        @csrf
-                        @method('PATCH')
-
-                        <button type="submit" class="btn-accion btn-rechazar">
-                            Rechazar consulta
-                        </button>
-                    </form>
-                </div>
-
-            </div>
+        @else
+            <!-- Botón deshabilitado visualmente y aviso de horario -->
+            <button type="button" disabled style="background-color: #96a0a0; cursor: not-allowed;">
+                Videollamada no disponible aún
+            </button>
+            <p style="color: #8a6d3b; background-color: #fff9e6; border: 1px solid #ffe399; padding: 12px; border-radius: 4px; margin-top: 10px; font-size: 14px;">
+                El acceso a la videollamada se habilitará el <strong>{{ $fechaHoraTurno->format('d/m/Y') }}</strong> a partir de las <strong>{{ $habilitadoDesde->format('H:i') }} hs</strong> (10 minutos antes del turno).
+            </p>
+        @endif
+    </section>
         @endif
     </main>
     <footer>Estudio Jurídico · Panel Profesional</footer>

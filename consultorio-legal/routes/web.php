@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Http\Request; // Necesario para procesar los datos enviados desde los formularios
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\SolicitudController;
 use App\Models\Solicitud;
@@ -38,7 +39,10 @@ Route::get('/perfil', function () {
         auth()->user()->email
     )->latest()->get();
 
-    return view('perfiles.cliente', compact('solicitudes'));
+    // Cargamos los turnos simulados guardados en sesión mientras Agus termina TurnoController
+    $turnos = session('turnos_prueba', []);
+
+    return view('perfiles.cliente', compact('solicitudes', 'turnos'));
 
 })->middleware('auth')->name('perfil');
 
@@ -55,6 +59,46 @@ Route::get('/abogado', function () {
     return view('perfiles.abogado', compact('solicitudes'));
 
 })->middleware('auth')->name('abogado');
+
+
+// PERFIL EDITABLE DEL ABOGADO (Protegido con auth y rol abogado)
+Route::get('/abogado/perfil', function () {
+
+    // Solo puede ingresar el abogado
+    abort_unless(auth()->user()->rol === 'abogado', 403);
+
+    $usuario = auth()->user();
+
+    // Carga los datos guardados en sesión o usa por defecto los datos profesionales
+    $perfil = session('perfil_abogado', [
+        'nombre' => $usuario->name ?? 'Dr. Martín Alejandro Fernández',
+        'especialidades' => 'Derecho Civil, Laboral y de Familia',
+        'email' => $usuario->email ?? 'abogado@estudiojuridico.com',
+        'descripcion_inicio' => 'Abogado egresado con experiencia en asesoramiento integral, resolución de conflictos civiles, reclamos laborales y derecho de familia. Atención personalizada presencial y mediante consultas virtuales.'
+    ]);
+
+    return view('perfiles.editar', compact('perfil'));
+
+})->middleware('auth')->name('abogado.perfil');
+
+Route::put('/abogado/perfil', function (Request $request) {
+
+    // Solo puede guardar cambios el abogado
+    abort_unless(auth()->user()->rol === 'abogado', 403);
+
+    $datos = $request->validate([
+        'nombre' => 'required|string|max:120',
+        'especialidades' => 'required|string|max:200',
+        'email' => 'required|email',
+        'descripcion_inicio' => 'required|string|max:1000',
+    ]);
+
+    // Guarda los datos en la sesión para reflejarlos en el perfil y en la página de inicio
+    session(['perfil_abogado' => $datos]);
+
+    return redirect()->route('abogado.perfil')->with('exito', 'Tus datos y la descripción del inicio se actualizaron correctamente.');
+
+})->middleware('auth')->name('abogado.perfil.actualizar');
 
 
 // SOLICITUDES - MALE
@@ -120,7 +164,9 @@ Route::get('/consultas/abogado/{id}', function ($id) {
 
 
 // DEMO DE JITSI
-Route::get('/consulta-demo', function () {return view('consultas.demo');})->middleware('auth');
+Route::get('/consulta-demo', function () {
+    return view('consultas.demo');
+})->middleware('auth');
 
 
 // SEGUIMIENTO DE SOLICITUDES
@@ -136,7 +182,7 @@ Route::post('/solicitudes/seguimiento/{token}/enviar-codigo',
     ->middleware('throttle:3,10')
     ->name('solicitudes.enviarCodigo');
 
-// NUEVA RUTA: verificar el código de 6 dígitos
+// Verificar el código de 6 dígitos
 Route::post('/solicitudes/seguimiento/{token}/verificar-codigo',
     [SolicitudController::class, 'verificarCodigo'])
     ->middleware('throttle:5,10')
@@ -150,17 +196,18 @@ Route::get('/registro', [RegistroController::class, 'mostrarRegistro'])
 Route::post('/registro', [RegistroController::class, 'guardarRegistro'])
     ->name('registro.guardar');
 
-//cuando un usuario visita /turnos Laravel ejecuta el método index
+// TURNOS - AGUs
+// Consultar los turnos
 Route::get('/turnos', [TurnoController::class, 'index'])
     ->middleware('auth')
     ->name('turnos.index');
 
-    //ruta cancelar turno
+// Cancelar turnos (solo el abogado autorizado)
 Route::delete('/turnos/{turno}', [TurnoController::class, 'destroy'])
     ->middleware('auth')
     ->name('turnos.destroy');
 
-    //reservar turno
+// Reservar turnos
 Route::post('/turnos', [TurnoController::class, 'store'])
     ->middleware('auth')
     ->name('turnos.store');
