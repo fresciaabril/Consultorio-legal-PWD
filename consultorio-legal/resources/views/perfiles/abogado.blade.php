@@ -258,13 +258,43 @@
     </header>
 
     <main>
+        <!-- Pestañas del panel del abogado - FRE -->
         <div class="tabs-nav">
-            <button type="button" class="tab-btn active" onclick="cambiarPestana(event, 'tab-consultas')"> Consultas </button>
-            <button type="button" class="tab-btn" onclick="cambiarPestana(event, 'tab-agenda')"> Agenda </button>
-            <button type="button" class="tab-btn" onclick="cambiarPestana(event, 'tab-disponibilidad')"> Disponibilidad </button>
-            <button type="button" class="tab-btn" onclick="cambiarPestana(event, 'tab-bloqueos')"> Fechas </button>
+            <button type="button" class="tab-btn active"
+                onclick="cambiarPestana(event, 'tab-consultas')">
+                Consultas
+            </button>
+
+            <button type="button" class="tab-btn"
+                onclick="cambiarPestana(event, 'tab-agenda')">
+                Agenda
+            </button>
+
+            <button type="button" class="tab-btn"
+                onclick="cambiarPestana(event, 'tab-disponibilidad')">
+                Disponibilidad
+            </button>
+
+            <button type="button" class="tab-btn"
+                onclick="cambiarPestana(event, 'tab-bloqueos')">
+                Fechas
+            </button>
         </div>
 
+        <!-- Acceso a la configuración de agenda - MALE -->
+        <div class="card">
+            <h2>Configuración de agenda</h2>
+
+            <p style="margin-bottom: 20px;">
+                Configurá tus horarios de atención y bloqueos de agenda.
+            </p>
+
+            <a href="{{ route('abogado.agenda') }}" class="btn-detalles">
+                Configurar mi agenda
+            </a>
+        </div>
+
+        <!-- Contenido de las pestañas - FRE -->
         @include('perfiles.pestanias.consultas')
         @include('perfiles.pestanias.agenda')
         @include('perfiles.pestanias.disponibilidad')

@@ -7,6 +7,9 @@ use App\Http\Controllers\SolicitudController;
 use App\Models\Solicitud;
 use App\Http\Controllers\RegistroController;
 use App\Http\Controllers\TurnoController;
+use App\Http\Controllers\DisponibilidadController;
+use App\Http\Controllers\BloqueoAgendaController;
+
 
 // PÁGINA DE INICIO
 Route::get('/', function () {
@@ -196,8 +199,9 @@ Route::get('/registro', [RegistroController::class, 'mostrarRegistro'])
 Route::post('/registro', [RegistroController::class, 'guardarRegistro'])
     ->name('registro.guardar');
 
-// TURNOS - AGUs
-// Consultar los turnos
+ // TURNOS - AGUS
+
+// Consultar los turnos del usuario autenticado
 Route::get('/turnos', [TurnoController::class, 'index'])
     ->middleware('auth')
     ->name('turnos.index');
@@ -211,3 +215,46 @@ Route::delete('/turnos/{turno}', [TurnoController::class, 'destroy'])
 Route::post('/turnos', [TurnoController::class, 'store'])
     ->middleware('auth')
     ->name('turnos.store');
+
+// DISPONIBILIDAD DEL ABOGADO - MALE
+// Consultar los horarios de atención configurados
+Route::get('/abogado/disponibilidades', [DisponibilidadController::class, 'index'])
+    ->middleware('auth')
+    ->name('abogado.disponibilidades');
+
+// Guardar un horario de atención
+Route::post('/abogado/disponibilidades', [DisponibilidadController::class, 'store'])
+    ->middleware('auth')
+    ->name('abogado.disponibilidades.store');
+
+// Consultar los horarios libres
+Route::get('/abogado/horarios-libres', [DisponibilidadController::class, 'horariosLibres'])
+    ->middleware('auth')
+    ->name('abogado.horarios-libres');
+
+// Mostrar la configuración de la agenda
+Route::get('/abogado/agenda', [DisponibilidadController::class, 'configurar'])
+    ->middleware('auth')
+    ->name('abogado.agenda');
+
+// Eliminar un horario de disponibilidad
+Route::delete('/abogado/disponibilidades/{id}', [DisponibilidadController::class, 'destroy'])
+    ->middleware('auth')
+    ->name('abogado.disponibilidades.destroy');
+
+// BLOQUEOS DE AGENDA - MALE
+// Guardar un bloqueo de agenda
+Route::post('/abogado/bloqueos', [BloqueoAgendaController::class, 'store'])
+    ->middleware('auth')
+    ->name('abogado.bloqueos.store');
+
+// Consultar los bloqueos de agenda
+Route::get('/abogado/bloqueos', [BloqueoAgendaController::class, 'index'])
+    ->middleware('auth')
+    ->name('abogado.bloqueos');
+
+// Eliminar un bloqueo
+Route::delete('/abogado/bloqueos/{id}', [BloqueoAgendaController::class, 'destroy'])
+    ->middleware('auth')
+    ->name('abogado.bloqueos.destroy');
+?>
