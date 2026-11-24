@@ -208,6 +208,11 @@
             color: #777777;
             margin-top: auto;
         }
+        @media (max-width: 768px) {
+            header { padding: 18px 15px; flex-direction: column; gap: 12px; text-align: center; }
+            main { padding: 0 12px; margin: 18px auto; }
+            #jitsi-container { height: 420px; min-height: 420px; }
+        }
     </style>
 </head>
 <body>

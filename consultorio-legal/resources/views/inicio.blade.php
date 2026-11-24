@@ -86,10 +86,9 @@
             align-items: stretch;
         }
 
-        @media (max-width: 820px) {
-            main {
-                grid-template-columns: 1fr;
-            }
+        @media (max-width: 768px) {
+            header { padding: 18px 15px; flex-direction: column; gap: 12px; text-align: center; }
+            main { grid-template-columns: 1fr; padding: 0 15px; margin: 20px auto; }
         }
 
         .columna-izquierda {
@@ -230,7 +229,6 @@
                 @endif
             @else
                 <a href="/login" class="btn-nav">Iniciar sesión</a>
-                <a href="/register" class="btn-nav-primary">Registrarse</a>
             @endauth
         </div>
     </header>
