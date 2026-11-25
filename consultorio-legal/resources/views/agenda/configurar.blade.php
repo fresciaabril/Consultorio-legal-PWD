@@ -117,9 +117,7 @@
 
     <h2>Agregar disponibilidad</h2>
 
-    <form id="formDisponibilidad"
-          action="{{ route('abogado.disponibilidades.store') }}"
-          method="POST">
+    <form id="formDisponibilidad" action="{{ route('abogado.disponibilidades.store') }}" method="POST">
 
         @csrf
 
@@ -139,13 +137,13 @@
 
         <label for="hora_inicio">Hora de inicio:</label>
         <input type="time" name="hora_inicio"
-               id="hora_inicio" required>
+                id="hora_inicio" required>
 
         <br><br>
 
         <label for="hora_fin">Hora de finalización:</label>
         <input type="time" name="hora_fin"
-               id="hora_fin" required>
+                id="hora_fin" required>
 
         <br><br>
 
@@ -155,29 +153,27 @@
 
     <hr>
 
-<h2>Bloquear fecha u horario</h2>
+    <h2>Bloquear fecha u horario</h2>
 
-<hr>
+    <hr>
 
-<h2>Mis horarios configurados</h2>
+    <h2>Mis horarios configurados</h2>
 
-<table border="1">
-    <thead>
-        <tr>
-            <th>Día</th>
-            <th>Hora de inicio</th>
-            <th>Hora de finalización</th>
-            <th>Acciones</th>
-        </tr>
-    </thead>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>Día</th>
+                <th>Hora de inicio</th>
+                <th>Hora de finalización</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
 
-    <tbody id="listaDisponibilidades">
-    </tbody>
-</table>
+        <tbody id="listaDisponibilidades">
+        </tbody>
+    </table>
 
-<form id="formBloqueo"
-      action="{{ route('abogado.bloqueos.store') }}"
-      method="POST">
+    <form id="formBloqueo" action="{{ route('abogado.bloqueos.store') }}" method="POST">
 
     @csrf
 
