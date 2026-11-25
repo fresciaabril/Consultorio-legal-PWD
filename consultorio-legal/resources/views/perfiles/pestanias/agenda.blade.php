@@ -9,6 +9,9 @@
             </div>
         </div>
 
+        <!-- Panel detalle al hacer clic en un turno del calendario -->
+        <div id="detalle-turno-seleccionado" style="display: none; background: #f4f7f8; border: 1px solid #cbd8de; border-left: 4px solid #1a3b47; border-radius: 6px; padding: 18px; margin-bottom: 18px;"></div>
+
         <!-- Contenedor donde se dibuja FullCalendar -->
         <div id="calendario-abogado" style="min-height: 550px;"></div>
 
@@ -21,6 +24,7 @@
                     @php
                         $inicio = \Carbon\Carbon::parse($turno->inicio);
                         $fin = \Carbon\Carbon::parse($turno->fin);
+                        $puedeCancelar = now()->lte($inicio->copy()->subDay());
                     @endphp
                     <div class="item-config" id="turno-abogado-{{ $turno->id }}" style="flex-wrap: wrap; gap: 10px;">
                         <div>
@@ -34,7 +38,7 @@
                             @endif
                         </div>
 
-                        <div style="display: flex; align-items: center; gap: 10px;">
+                        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
                             @if ($turno->estado === 'cancelado')
                                 <span style="color: #7f8c8d; font-weight: 600; font-size: 13px;">Cancelado</span>
                             @else
@@ -46,11 +50,15 @@
                                     </a>
                                 @endif
 
-                                <button type="button"
-                                        onclick="cancelarTurnoAbogado({{ $turno->id }})"
-                                        style="background-color: #c5221f; color: #fff; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer;">
-                                    Cancelar turno
-                                </button>
+                                @if ($puedeCancelar)
+                                    <button type="button"
+                                            onclick="cancelarTurnoAbogado({{ $turno->id }})"
+                                            style="background-color: #c5221f; color: #fff; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer;">
+                                        Cancelar turno
+                                    </button>
+                                @else
+                                    <span style="font-size: 12px; color: #777777;">Plazo de cancelación cerrado (menos de 24 hs)</span>
+                                @endif
                             @endif
                         </div>
                     </div>
@@ -81,15 +89,18 @@
             const clienteNombre = t.cliente ? t.cliente.name : 'Cliente';
             const clienteEmail = t.cliente ? t.cliente.email : '';
             const esReservado = t.estado === 'reservado';
-            const esFuturo = inicio > new Date();
+
+            // Límite de 1 día (24 horas) antes del inicio del turno
+            const limiteCancelacion = new Date(inicio.getTime() - (24 * 60 * 60 * 1000));
+            const puedeCancelar = esReservado && (new Date() <= limiteCancelacion);
 
             const btnJitsi = (t.modalidad === 'virtual' && esReservado)
                 ? `<a href="/turnos/${t.id}/videollamada" class="btn-detalles">Sala de reunión</a>`
                 : '';
 
-            const btnCancelar = (esReservado && esFuturo)
+            const btnCancelar = puedeCancelar
                 ? `<button type="button" class="btn-cancelar-turno" onclick="cancelarTurnoAbogado(${t.id})">Cancelar turno</button>`
-                : '';
+                : (esReservado ? `<span style="font-size: 12px; color: #777777;">Plazo de cancelación cerrado (menos de 24 hs)</span>` : '');
 
             const motivoHtml = t.motivo
                 ? `<p style="font-size: 13px; color: #666666; margin-bottom: 8px;">Motivo: ${escapeHtml(t.motivo)}</p>`
@@ -127,15 +138,18 @@
         const horaFin = fin.toTimeString().slice(0, 5);
         const clienteNombre = t.cliente ? t.cliente.name : 'Cliente';
         const esReservado = t.estado === 'reservado';
-        const esFuturo = inicio > new Date();
+
+        // Límite de 1 día (24 horas) antes del inicio del turno
+        const limiteCancelacion = new Date(inicio.getTime() - (24 * 60 * 60 * 1000));
+        const puedeCancelar = esReservado && (new Date() <= limiteCancelacion);
 
         const btnJitsi = (t.modalidad === 'virtual' && esReservado)
             ? `<a href="/turnos/${t.id}/videollamada" class="btn-detalles">Entrar a videollamada</a>`
             : '';
 
-        const btnCancelar = (esReservado && esFuturo)
+        const btnCancelar = puedeCancelar
             ? `<button type="button" class="btn-cancelar-turno" onclick="cancelarTurnoAbogado(${t.id})">Cancelar turno</button>`
-            : '';
+            : (esReservado ? `<span style="font-size: 12px; color: #777777;">Plazo de cancelación cerrado (menos de 24 hs)</span>` : '');
 
         panel.innerHTML = `
             <div style="display: flex; justify-content: space-between; align-items: center; gap: 15px; flex-wrap: wrap;">
@@ -148,7 +162,7 @@
                         ${t.motivo ? `· Motivo: ${escapeHtml(t.motivo)}` : ''}
                     </p>
                 </div>
-                <div style="display: flex; gap: 10px; align-items: center;">
+                <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
                     ${btnJitsi}
                     ${btnCancelar}
                     <button type="button" class="btn-logout" style="color: #1a3b47; border-color: #ccc;" onclick="document.getElementById('detalle-turno-seleccionado').style.display='none'">Cerrar</button>

@@ -15,7 +15,7 @@ class TurnoController extends Controller
 {
     // Mostrar los turnos del usuario autenticado
     public function index(Request $request){
-        $usuario = $request->user(); //obtiene el usuario que inició sesión 
+        $usuario = $request->user(); // obtiene el usuario que inició sesión 
         if ($usuario->rol === 'abogado') { 
             // El abogado ve los turnos asignados
             $turnos = Turno::with('cliente')->where('abogado_id', $usuario->id)->orderBy('inicio')->get();
@@ -27,24 +27,28 @@ class TurnoController extends Controller
         } else {
             abort(403, 'No tenés permiso para consultar turnos.');
         }
-        return response()->json($turnos); //Ejecuta la consulta y devuelve una colección de turnos.
+        return response()->json($turnos); // Ejecuta la consulta y devuelve una colección de turnos.
     }
 
 
-    // Cancelar un turno (solo el abogado)
+    // Cancelar un turno (solo el abogado y hasta 1 día antes del inicio)
     public function destroy(Request $request, Turno $turno){
         $usuario = $request->user();
-        if ( $usuario->rol !== 'abogado' || (int) $turno->abogado_id !== (int) $usuario->id){
+        if ($usuario->rol !== 'abogado' || (int) $turno->abogado_id !== (int) $usuario->id){
             abort(403, 'No tenés permiso para cancelar este turno.');
         }
         if ($turno->estado !== 'reservado') {
-            return response()->json([ 'mensaje' => 'Este turno no se puede cancelar.'], 422);
+            return response()->json(['mensaje' => 'Este turno no se puede cancelar.'], 422);
         }
 
-        // No permitir cancelar turnos que ya comenzaron
-        if ($turno->inicio->isPast()) {
-            return response()->json(['mensaje' => 'No se puede cancelar un turno que ya comenzó.'], 422);
+        // Límite de 1 día (24 horas) antes del inicio del turno
+        $limiteCancelacion = $turno->inicio->copy()->subDay();
+        if (now()->greaterThan($limiteCancelacion)) {
+            return response()->json([
+                'mensaje' => 'Solo se puede cancelar un turno con al menos 1 día (24 horas) de anticipación.'
+            ], 422);
         }
+
         $turno->estado = 'cancelado';
         $turno->save();
         return response()->json(['mensaje' => 'Turno cancelado correctamente.']);
@@ -76,7 +80,7 @@ class TurnoController extends Controller
         $fecha = $inicio->format('Y-m-d');
         $horaInicio = $inicio->format('H:i');
 
-        // Guardado que evita reservar simultáneas en el mismo horario
+        // Guardado que evita reservas simultáneas en el mismo horario
         $turno = DB::transaction(function () use ($usuario, $abogado, $datos, $inicio, $fin, $fecha, $horaInicio, $agendaService) {
             // Bloqueamos los turnos activos del abogado para ese día 
             Turno::where('abogado_id', $abogado->id)
@@ -85,7 +89,7 @@ class TurnoController extends Controller
                 ->lockForUpdate()
                 ->get();
 
-            // verificamos que este disponible 
+            // Verificamos que esté disponible 
             $horariosLibres = $agendaService->obtenerHorariosLibres($abogado->id, $fecha, 120);
             $esBloqueValido = collect($horariosLibres)->contains(function ($bloque) use ($horaInicio) {
                 return $bloque['hora_inicio'] === $horaInicio;
