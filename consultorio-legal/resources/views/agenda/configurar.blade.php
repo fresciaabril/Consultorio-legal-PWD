@@ -238,6 +238,7 @@
             const respuesta = await fetch(
                 "{{ route('abogado.disponibilidades') }}",
                 {
+                    //le indicamos al servidor que queremos una respuesta json
                     headers: {
                         'Accept': 'application/json'
                     }

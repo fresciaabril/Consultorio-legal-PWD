@@ -171,6 +171,7 @@ Route::get('/abogado/bloqueos', [BloqueoAgendaController::class, 'index'])
     ->middleware('auth')
     ->name('abogado.bloqueos');
 
+//ruta q permite que el abogado consulte sus horarios disponibles para una fecha determinada.
 Route::get('/abogado/horarios-libres', [DisponibilidadController::class, 'horariosLibres'])
     ->middleware('auth')
     ->name('abogado.horarios-libres');
