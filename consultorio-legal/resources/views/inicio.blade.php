@@ -86,11 +86,6 @@
             align-items: stretch;
         }
 
-        @media (max-width: 768px) {
-            header { padding: 18px 15px; flex-direction: column; gap: 12px; text-align: center; }
-            main { grid-template-columns: 1fr; padding: 0 15px; margin: 20px auto; }
-        }
-
         .columna-izquierda {
             display: flex;
             flex-direction: column;
@@ -124,6 +119,53 @@
             font-size: 15px;
             line-height: 1.6;
             color: #444444;
+        }
+
+        /* Presentación del profesional con foto */
+        .profesional-contenedor {
+            display: flex;
+            gap: 22px;
+            align-items: flex-start;
+            flex-wrap: wrap;
+        }
+
+        .profesional-foto {
+            width: 110px;
+            height: 110px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #1a3b47;
+            flex-shrink: 0;
+        }
+
+        .profesional-avatar {
+            width: 110px;
+            height: 110px;
+            border-radius: 50%;
+            background-color: #e6eef2;
+            color: #1a3b47;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 28px;
+            border: 3px solid #1a3b47;
+            flex-shrink: 0;
+        }
+
+        .profesional-datos {
+            flex: 1;
+            min-width: 240px;
+        }
+
+        .card p.profesional-nombre {
+            font-weight: 600;
+            color: #1a3b47;
+            margin-bottom: 8px;
+        }
+
+        .card p.texto-intro {
+            margin-bottom: 14px;
         }
 
         /* Lista vertical de especialidades dentro de la tarjeta derecha */
@@ -214,6 +256,20 @@
             color: #777777;
             margin-top: auto;
         }
+
+        @media (max-width: 768px) {
+            header {
+                padding: 18px 15px;
+                flex-direction: column;
+                gap: 12px;
+                text-align: center;
+            }
+            main {
+                grid-template-columns: 1fr;
+                padding: 0 15px;
+                margin: 20px auto;
+            }
+        }
     </style>
 </head>
 <body>
@@ -236,24 +292,38 @@
     <main>
         <!-- COLUMNA IZQUIERDA: Sobre el profesional arriba + Asesoramiento abajo -->
         <div class="columna-izquierda">
-            <!-- 1. Presentación profesional dinámica desde "Mi Perfil" -->
+            <!-- 1. Presentación profesional dinámica desde la base de datos -->
             <div class="card">
                 <h3>Sobre el Profesional</h3>
-                <div class="badge-especialidad">
-                    {{ session('perfil_abogado.especialidades', 'Derecho Civil, Laboral y de Familia') }}
+                <div class="profesional-contenedor">
+                    @if (!empty($abogado?->foto))
+                        <img src="{{ asset('storage/' . $abogado->foto) }}"
+                             alt="{{ $abogado->name ?? 'Dr. Martín Alejandro Fernández' }}"
+                             class="profesional-foto">
+                    @else
+                        <div class="profesional-avatar">
+                            MF
+                        </div>
+                    @endif
+
+                    <div class="profesional-datos">
+                        <div class="badge-especialidad">
+                            {{ $abogado?->especialidades ?: 'Derecho Civil, Laboral y de Familia' }}
+                        </div>
+                        <p class="profesional-nombre">
+                            {{ $abogado?->name ?: 'Dr. Martín Alejandro Fernández' }}
+                        </p>
+                        <p>
+                            {{ $abogado?->descripcion_inicio ?: 'Brindamos acompañamiento jurídico integral con atención personalizada, análisis detallado de cada caso y seguimiento continuo mediante consultas virtuales programadas.' }}
+                        </p>
+                    </div>
                 </div>
-                <p style="font-weight: 600; color: #1a3b47; margin-bottom: 8px;">
-                    {{ session('perfil_abogado.nombre', 'Dr. Martín Alejandro Fernández') }}
-                </p>
-                <p>
-                    {{ session('perfil_abogado.descripcion_inicio', 'Brindamos acompañamiento jurídico integral con atención personalizada, análisis detallado de cada caso y seguimiento continuo mediante consultas virtuales programadas.') }}
-                </p>
             </div>
 
             <!-- 2. Asesoramiento y Modalidad de Atención unificados abajo -->
             <div class="card">
                 <h3>Asesoramiento y Modalidad de Atención</h3>
-                <p style="margin-bottom: 14px;">
+                <p class="texto-intro">
                     Ofrecemos asesoramiento legal claro y personalizado. Enviá tu consulta online, coordiná un turno según disponibilidad y realizá tu reunión virtual directamente desde nuestra plataforma:
                 </p>
                 <p>

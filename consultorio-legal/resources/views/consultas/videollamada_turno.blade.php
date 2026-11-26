@@ -36,11 +36,12 @@
             $inicioTurno = \Carbon\Carbon::parse($turno->inicio);
             $finTurno = \Carbon\Carbon::parse($turno->fin);
             $habilitadoDesde = $inicioTurno->copy()->subMinutes(10);
+            $habilitadoHasta = $inicioTurno->copy()->addMinutes(90);
 
             // para probar
             $puedeUnirse = true;
 
-            //$puedeUnirse = now()->between($habilitadoDesde, $finTurno);
+            //$puedeUnirse = now()->between($habilitadoDesde, $habilitadoHasta);
         @endphp
 
         <div class="card">
@@ -85,8 +86,8 @@
                     Videollamada no disponible aún
                 </button>
                 <p style="color: #8a6d3b; background-color: #fff9e6; border: 1px solid #ffe399; padding: 12px; border-radius: 4px; margin-top: 12px; font-size: 14px;">
-                    El acceso se habilitará el <strong>{{ $inicioTurno->format('d/m/Y') }}</strong> a partir de las <strong>{{ $habilitadoDesde->format('H:i') }} hs</strong> (10 minutos antes del turno) y permanecerá activo hasta las <strong>{{ $finTurno->format('H:i') }} hs</strong>.
-                </p>
+                    El acceso está habilitado únicamente el <strong>{{ $inicioTurno->format('d/m/Y') }}</strong> desde las <strong>{{ $habilitadoDesde->format('H:i') }} hs</strong> (10 minutos antes del inicio) hasta las <strong>{{ $habilitadoHasta->format('H:i') }} hs</strong> (1 hora y media después del comienzo).
+            </p>
             @endif
         </div>
     </main>

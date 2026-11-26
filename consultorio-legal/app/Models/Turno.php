@@ -22,8 +22,8 @@ class Turno extends Model
     protected function casts(): array
     {
         return [
-            'inicio' => 'datetime',
-            'fin' => 'datetime',
+            'inicio' => 'datetime:Y-m-d H:i:s',
+            'fin' => 'datetime:Y-m-d H:i:s',
         ];
     }
 

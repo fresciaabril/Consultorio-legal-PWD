@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Request;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\SolicitudController;
@@ -11,9 +12,11 @@ use App\Http\Controllers\DisponibilidadController;
 use App\Http\Controllers\BloqueoAgendaController;
 
 
-// PÁGINA DE INICIO
+// PÁGINA DE INICIO (carga los datos del abogado desde la base de datos)
 Route::get('/', function () {
-    return view('inicio');
+    $abogado = \App\Models\User::where('rol', 'abogado')->first();
+
+    return view('inicio', compact('abogado'));
 });
 
 
@@ -63,7 +66,10 @@ Route::get('/perfil', function () {
 Route::get('/abogado', function () {
     abort_unless(auth()->user()->rol === 'abogado', 403);
 
-    $solicitudes = Solicitud::latest()->get();
+    // Trae todas las consultas EXCEPTO las rechazadas
+    $solicitudes = \App\Models\Solicitud::where('estado', '!=', 'rechazada')
+        ->latest()
+        ->get();
 
     $turnos = \App\Models\Turno::with('cliente')
         ->where('abogado_id', auth()->id())
@@ -74,35 +80,61 @@ Route::get('/abogado', function () {
 })->middleware('auth')->name('abogado');
 
 
-// PERFIL EDITABLE DEL ABOGADO
+// PERFIL EDITABLE DEL ABOGADO (lee desde la base de datos)
 Route::get('/abogado/perfil', function () {
+
     abort_unless(auth()->user()->rol === 'abogado', 403);
 
     $usuario = auth()->user();
 
-    $perfil = session('perfil_abogado', [
-        'nombre' => $usuario->name ?? 'Dr. Martín Alejandro Fernández',
-        'especialidades' => 'Derecho Civil, Laboral y de Familia',
-        'email' => $usuario->email ?? 'abogado@estudiojuridico.com',
-        'descripcion_inicio' => 'Abogado egresado con experiencia en asesoramiento integral, resolución de conflictos civiles, reclamos laborales y derecho de familia. Atención personalizada presencial y mediante consultas virtuales.'
-    ]);
+    $perfil = [
+        'nombre'             => $usuario->name ?? 'Dr. Martín Alejandro Fernández',
+        'especialidades'     => $usuario->especialidades ?? 'Derecho Civil, Laboral y de Familia',
+        'email'              => $usuario->email ?? 'abogado@estudiojuridico.com',
+        'descripcion_inicio' => $usuario->descripcion_inicio ?? 'Brindamos acompañamiento jurídico integral con atención personalizada, análisis detallado de cada caso y seguimiento continuo mediante consultas virtuales programadas.',
+        'foto'               => $usuario->foto,
+    ];
 
     return view('perfiles.editar', compact('perfil'));
+
 })->middleware('auth')->name('abogado.perfil');
 
+
+// GUARDAR CAMBIOS DEL PERFIL DEL ABOGADO EN LA BASE DE DATOS
 Route::put('/abogado/perfil', function (Request $request) {
+
     abort_unless(auth()->user()->rol === 'abogado', 403);
 
+    $usuario = auth()->user();
+
     $datos = $request->validate([
-        'nombre' => 'required|string|max:120',
-        'especialidades' => 'required|string|max:200',
-        'email' => 'required|email',
+        'nombre'             => 'required|string|max:120',
+        'especialidades'     => 'required|string|max:200',
+        'email'              => 'required|email|unique:users,email,' . $usuario->id,
         'descripcion_inicio' => 'required|string|max:1000',
+        'foto'               => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
     ]);
 
-    session(['perfil_abogado' => $datos]);
+    $rutaFoto = $usuario->foto;
 
-    return redirect()->route('abogado.perfil')->with('exito', 'Tus datos y la descripción del inicio se actualizaron correctamente.');
+    if ($request->hasFile('foto')) {
+        if ($rutaFoto && Storage::disk('public')->exists($rutaFoto)) {
+            Storage::disk('public')->delete($rutaFoto);
+        }
+
+        $rutaFoto = $request->file('foto')->store('perfil', 'public');
+    }
+
+    $usuario->update([
+        'name'               => $datos['nombre'],
+        'especialidades'     => $datos['especialidades'],
+        'email'              => $datos['email'],
+        'descripcion_inicio' => $datos['descripcion_inicio'],
+        'foto'               => $rutaFoto,
+    ]);
+
+    return redirect()->route('abogado.perfil')->with('exito', 'Tus datos, foto y descripción del inicio se guardaron en la base de datos.');
+
 })->middleware('auth')->name('abogado.perfil.actualizar');
 
 
