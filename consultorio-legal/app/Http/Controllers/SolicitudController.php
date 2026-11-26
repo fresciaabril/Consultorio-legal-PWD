@@ -35,6 +35,11 @@ class SolicitudController extends Controller
 
         // Guardamos la solicitud en Aiven
         $solicitud = Solicitud::create($datos);
+        //Recargamos la solicitud con su stado inicial
+        $solicitud->refresh();
+
+        //Enviamos el correo de confirmacion
+        $this->enviarCorreoEstado($solicitud);
 
         // Redirigimos al seguimiento de esta solicitud
         return redirect()->route(
@@ -246,6 +251,9 @@ class SolicitudController extends Controller
     {
         $solicitud->update(['estado' => 'aceptada']);
 
+        //enviar coreo de aceptacion
+        $this->enviarCorreoEstado($solicitud);
+
         return back();
     }
 
@@ -254,6 +262,33 @@ class SolicitudController extends Controller
     {
         $solicitud->update(['estado' => 'rechazada']);
 
+        $this->enviarCorreoEstado($solicitud);
+
         return back();
+    }
+
+    //enviar correo con el estado de la solicitud
+    private function enviarCorreoEstado(Solicitud $solicitud){
+        $asunto = match ($solicitud->estado){
+            'pendiente' => 'Solicitud recibida - Consultorio Legal',
+            'aceptada' => 'Tu solicitud fue aceptada - Consultorio Legal',
+            'rechazada' => 'Estado de tu solicitud - Consultorio Legal',
+            default => 'Consultorio Legal',
+        };
+
+        try{
+            Mail::send(
+                'emails.estado_solicitud',
+                ['solicitud' => $solicitud],
+                function ($mensaje) use ($solicitud, $asunto){
+                    $mensaje->to($solicitud->email)
+                    ->subject($asunto);
+                }
+            );
+        } 
+        catch (\Exception $e){
+            \Illuminate\Support\Facades\Log::error(
+            'No se pudo enviar el correo de la solicitud ID: ' . $solicitud->id);
+        }
     }
 }
