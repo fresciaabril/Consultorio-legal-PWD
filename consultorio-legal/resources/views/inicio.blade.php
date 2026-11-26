@@ -299,7 +299,7 @@
                     @php
                         // Prioriza la foto subida al storage local; si no existe en esta PC, usa public/images/abogado.jpg
                         $tieneFotoStorage = !empty($abogado?->foto) && file_exists(public_path('storage/' . $abogado->foto));
-                        $rutaImagen =$tieneFotoStorage
+                        $rutaImagen = $tieneFotoStorage
                             ? asset('storage/' . $abogado->foto)
                             : (file_exists(public_path('images/abogado.jpg')) ? asset('images/abogado.jpg') : null);
                     @endphp
@@ -366,4 +366,24 @@
                 <ul class="lista-areas">
                     <li>
                         <strong>Derecho Civil</strong>
-                        <span>Contratos de alquiler, compr
+                        <span>Contratos de alquiler, compraventa, sucesiones, daños y perjuicios y reclamos particulares.</span>
+                    </li>
+                    <li>
+                        <strong>Derecho Laboral</strong>
+                        <span>Despidos sin causa, liquidaciones finales, accidentes de trabajo y diferencias salariales.</span>
+                    </li>
+                    <li>
+                        <strong>Derecho de Familia</strong>
+                        <span>Divorcios, cuota alimentaria, régimen de comunicación y acuerdos familiares.</span>
+                    </li>
+                </ul>
+            </div>
+        </aside>
+    </main>
+
+    <footer>
+        Estudio Jurídico · Atención con cita previa
+    </footer>
+
+</body>
+</html>
