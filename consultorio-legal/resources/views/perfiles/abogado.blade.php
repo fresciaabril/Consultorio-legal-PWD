@@ -229,65 +229,65 @@
         }
 
         @media (max-width: 768px) {
-    header {
-        padding: 18px 15px;
-        flex-direction: column;
-        gap: 12px;
-        text-align: center;
-    }
-    header h1 { font-size: 22px; }
-    main {
-        padding: 0 12px;
-        margin: 15px auto;
-        max-width: 100%;
-    }
-    .card { padding: 16px; }
-    .card h2 { font-size: 18px; }
-    .tabs-nav {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 8px;
-    }
-    .tab-btn {
-        min-width: 0;
-        width: 100%;
-        padding: 10px 8px;
-        font-size: 13px;
-    }
-    .solicitud-item,
-    .item-config {
-        flex-direction: column;
-        align-items: stretch;
-        padding: 15px;
-    }
-    .btn-detalles,
-    .btn-cancelar-turno,
-    .btn-guardar {
-        width: 100%;
-        text-align: center;
-    }
-    .fc .fc-toolbar {
-        flex-direction: column;
-        gap: 8px;
-    }
-}
+            header {
+                padding: 18px 15px;
+                flex-direction: column;
+                gap: 12px;
+                text-align: center;
+            }
+            header h1 { font-size: 22px; }
+            main {
+                padding: 0 12px;
+                margin: 15px auto;
+                max-width: 100%;
+            }
+            .card { padding: 16px; }
+            .card h2 { font-size: 18px; }
+            .tabs-nav {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 8px;
+            }
+            .tab-btn {
+                min-width: 0;
+                width: 100%;
+                padding: 10px 8px;
+                font-size: 13px;
+            }
+            .solicitud-item,
+            .item-config {
+                flex-direction: column;
+                align-items: stretch;
+                padding: 15px;
+            }
+            .btn-detalles,
+            .btn-cancelar-turno,
+            .btn-guardar {
+                width: 100%;
+                text-align: center;
+            }
+            .fc .fc-toolbar {
+                flex-direction: column;
+                gap: 8px;
+            }
+        }
 
-    .sala-bloque-deshabilitado {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 4px;
-    }
+        .sala-bloque-deshabilitado {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 4px;
+        }
 
-    .aviso-sala-tiempo {
-        font-size: 11.5px;
-        color: #8a6d3b;
-        background-color: #fff9e6;
-        border: 1px solid #ffe399;
-        padding: 3px 8px;
-        border-radius: 4px;
-        font-weight: 500;
-    }
+        .aviso-sala-tiempo {
+            font-size: 11.5px;
+            color: #8a6d3b;
+            background-color: #fff9e6;
+            border: 1px solid #ffe399;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-weight: 500;
+        }
     </style>
 </head>
 <body>
@@ -376,23 +376,24 @@
                         const bloqueos = Array.isArray(dataBloqueos) ? dataBloqueos : (dataBloqueos.bloqueos || []);
                         const eventos = [];
 
-                        // 1. Mapear turnos reales (reservados vs cancelados)
-                        turnos.forEach(turno => {
-                            const clienteNombre = turno.cliente ? turno.cliente.name : 'Cliente';
-                            const esCancelado = turno.estado === 'cancelado';
+                        // 1. Mapear turnos reales (omitir los cancelados para no mostrarlos en el calendario)
+                        turnos
+                            .filter(turno => turno.estado !== 'cancelado')
+                            .forEach(turno => {
+                                const clienteNombre = turno.cliente ? turno.cliente.name : 'Cliente';
 
-                            eventos.push({
-                                id: 'turno-' + turno.id,
-                                title: `${esCancelado ? '[CANCELADO]' : 'Turno:'} ${clienteNombre} (${turno.modalidad})`,
-                                start: turno.inicio,
-                                end: turno.fin,
-                                color: esCancelado ? '#7f8c8d' : '#1a3b47',
-                                extendedProps: {
-                                    tipo: 'turno',
-                                    turno: turno
-                                }
+                                eventos.push({
+                                    id: 'turno-' + turno.id,
+                                    title: `Turno: ${clienteNombre} (${turno.modalidad})`,
+                                    start: turno.inicio,
+                                    end: turno.fin,
+                                    color: '#1a3b47',
+                                    extendedProps: {
+                                        tipo: 'turno',
+                                        turno: turno
+                                    }
+                                });
                             });
-                        });
 
                         // 2. Mapear bloqueos reales (fecha completa u horario específico)
                         bloqueos.forEach(bloqueo => {

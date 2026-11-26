@@ -4,7 +4,6 @@
             <h2>Mi Agenda y Turnos</h2>
             <div class="agenda-leyenda">
                 <span><strong class="leyenda-reservado">■</strong> Turno Reservado</span>
-                <span><strong class="leyenda-cancelado">■</strong> Turno Cancelado</span>
                 <span><strong class="leyenda-bloqueado">■</strong> Bloqueado</span>
             </div>
         </div>

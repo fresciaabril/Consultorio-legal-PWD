@@ -66,7 +66,10 @@ Route::get('/perfil', function () {
 Route::get('/abogado', function () {
     abort_unless(auth()->user()->rol === 'abogado', 403);
 
-    $solicitudes = Solicitud::latest()->get();
+    // Trae todas las consultas EXCEPTO las rechazadas
+    $solicitudes = \App\Models\Solicitud::where('estado', '!=', 'rechazada')
+        ->latest()
+        ->get();
 
     $turnos = \App\Models\Turno::with('cliente')
         ->where('abogado_id', auth()->id())
