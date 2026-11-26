@@ -164,8 +164,13 @@ Route::get('/consultas/cliente/{id}', function ($id) {
 
     $solicitud = Solicitud::where('email', auth()->user()->email)
         ->findOrFail($id);
+    //obtenemos los turnos asociados a la solicitud 
+    $turnos = $solicitud->turnos()
+    ->where('cliente_id', auth()->id())
+    ->orderBy('inicio', 'desc')
+    ->get();
 
-    return view('consultas.ver_cliente', compact('solicitud'));
+    return view('consultas.ver_cliente', compact('solicitud', 'turnos'));
 })->middleware('auth');
 
 Route::get('/consultas/abogado/{id}', function ($id) {
@@ -173,7 +178,13 @@ Route::get('/consultas/abogado/{id}', function ($id) {
 
     $solicitud = Solicitud::findOrFail($id);
 
-    return view('consultas.ver_abogado', compact('solicitud'));
+    //Obtenemos los turnos asociados a la solicitud 
+    $turnos = $solicitud -> turnos()
+    ->where('abogado_id', auth()->id())
+    ->orderBy('inicio', 'desc')
+    ->get();
+
+    return view('consultas.ver_abogado', compact('solicitud', 'turnos'));
 })->middleware('auth');
 
 

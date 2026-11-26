@@ -36,8 +36,8 @@
                         $fin = \Carbon\Carbon::parse($turno->fin);
                         $puedeCancelar = $ahora->lte($inicio->copy()->subDay());
                         $habilitadoDesde = $inicio->copy()->subMinutes(10);
-                        $habilitadoHasta = $inicio->copy()->addMinutes(90);
-                        $llamadaHabilitada = $ahora->between($habilitadoDesde, $habilitadoHasta);
+                        $habilitadoHasta = $fin;
+                        $llamadaHabilitada = $ahora->gte($habilitadoDesde) && $ahora->lt($habilitadoHasta);
                     @endphp
                     <div class="item-config" id="turno-abogado-{{ $turno->id }}">
                         <div>
@@ -138,8 +138,8 @@
             const puedeCancelar = ahora <= limiteCancelacion;
 
             const habilitadoDesde = new Date(inicio.getTime() - (10 * 60 * 1000));
-            const habilitadoHasta = new Date(inicio.getTime() + (90 * 60 * 1000));
-            const llamadaHabilitada = ahora >= habilitadoDesde && ahora <= habilitadoHasta;
+            const habilitadoHasta = fin;
+            const llamadaHabilitada = ahora >= habilitadoDesde && ahora < habilitadoHasta;
 
             let btnJitsi = '';
             if (t.modalidad === 'virtual') {
@@ -201,8 +201,8 @@
         const puedeCancelar = esReservado && (ahora <= limiteCancelacion);
 
         const habilitadoDesde = new Date(inicio.getTime() - (10 * 60 * 1000));
-        const habilitadoHasta = new Date(inicio.getTime() + (90 * 60 * 1000));
-        const llamadaHabilitada = esReservado && ahora >= habilitadoDesde && ahora <= habilitadoHasta;
+        const habilitadoHasta = fin;
+        const llamadaHabilitada = esReservado && ahora >= habilitadoDesde && ahora < habilitadoHasta;
 
         let btnJitsi = '';
         if (t.modalidad === 'virtual' && esReservado) {

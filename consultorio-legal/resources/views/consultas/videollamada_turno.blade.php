@@ -36,12 +36,15 @@
             $inicioTurno = \Carbon\Carbon::parse($turno->inicio);
             $finTurno = \Carbon\Carbon::parse($turno->fin);
             $habilitadoDesde = $inicioTurno->copy()->subMinutes(10);
-            $habilitadoHasta = $inicioTurno->copy()->addMinutes(90);
+            $habilitadoHasta = $finTurno->copy();
 
-            // para probar
-            $puedeUnirse = true;
+            $ahora = now();
 
-            //$puedeUnirse = now()->between($habilitadoDesde, $habilitadoHasta);
+            $puedeUnirse =
+                $turno->estado === 'reservado' &&
+                $turno->modalidad === 'virtual' &&
+                $ahora->gte($habilitadoDesde) &&
+                $ahora->lt($habilitadoHasta);
         @endphp
 
         <div class="card">
@@ -86,8 +89,9 @@
                     Videollamada no disponible aún
                 </button>
                 <p style="color: #8a6d3b; background-color: #fff9e6; border: 1px solid #ffe399; padding: 12px; border-radius: 4px; margin-top: 12px; font-size: 14px;">
-                    El acceso está habilitado únicamente el <strong>{{ $inicioTurno->format('d/m/Y') }}</strong> desde las <strong>{{ $habilitadoDesde->format('H:i') }} hs</strong> (10 minutos antes del inicio) hasta las <strong>{{ $habilitadoHasta->format('H:i') }} hs</strong> (1 hora y media después del comienzo).
-            </p>
+                    El acceso está habilitado únicamente para turnos virtuales reservados el
+                    <strong>{{ $inicioTurno->format('d/m/Y') }}</strong> desde las <strong>{{ $habilitadoDesde->format('H:i') }} hs</strong> (10 minutos antes del inicio) hasta las <strong>{{ $habilitadoHasta->format('H:i') }} hs</strong> (finalización del turno).
+                </p>
             @endif
         </div>
     </main>

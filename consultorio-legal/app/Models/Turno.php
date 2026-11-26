@@ -11,6 +11,7 @@ class Turno extends Model
     protected $fillable = [
         'cliente_id',
         'abogado_id',
+        'solicitud_id',
         'inicio',
         'fin',
         'modalidad',
@@ -37,5 +38,11 @@ class Turno extends Model
     public function abogado(): BelongsTo
     {
         return $this->belongsTo(User::class, 'abogado_id');
+    }
+
+    // Un turno pertenece a una solicitud
+    public function solicitud(): BelongsTo
+    {
+        return $this->belongsTo(Solicitud::class, 'solicitud_id');
     }
 }
