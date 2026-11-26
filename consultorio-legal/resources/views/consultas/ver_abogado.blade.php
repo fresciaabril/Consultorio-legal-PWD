@@ -51,80 +51,129 @@
             </p>
         </div>
 
-        @if (isset($solicitud->estado) && $solicitud->estado === 'aceptada')
-    @php
-        //Tomamos la fecha y hora del turno 
-        $fechaHoraTurno = \Carbon\Carbon::parse($turno->fecha_hora ?? '2026-11-13 19:15:00');
         
-        //desde 10 minutos antes hasta 1 hora después 
-        $habilitadoDesde = $fechaHoraTurno->copy()->subMinutes(10);
-        $habilitadoHasta = $fechaHoraTurno->copy()->addMinutes(60);
-        
-        //Verificamos si la hora actual está dentro de ese rango
-        $puedeUnirse = now()->between($habilitadoDesde, $habilitadoHasta);
-    @endphp
+    
+        @if ($solicitud->estado === 'aceptada')
 
-    <section class="informacion">
-        <h2>Reunión en Vivo</h2>
-        <p style="margin-bottom: 10px;">
-            <strong>Turno programado:</strong> {{ $fechaHoraTurno->format('d/m/Y \a \l\a\s H:i') }} hs
-        </p>
+            <div class="card">
+                <h2>Turnos de la consulta</h2>
 
-        @if ($puedeUnirse)
-            <p id="mensaje">La sala ya está habilitada. Presioná el botón para iniciar la consulta.</p>
-            <button id="iniciar">🎥 Iniciar videollamada</button>
-            <div id="jitsi-container"></div>
+                @forelse ($turnos as $turno)
 
-            <!-- solo se carga si ya es hora del turno -->
-            <script src="https://meet.jit.si/external_api.js"></script>
-            <script>
-                let api = null;
-                const boton = document.getElementById('iniciar');
-                const mensaje = document.getElementById('mensaje');
-                const contenedor = document.getElementById('jitsi-container');
+                    @php
+                        $habilitadoDesde = $turno->inicio->copy()->subMinutes(10);
+                        $habilitadoHasta = $turno->fin;
 
-                boton.addEventListener('click', function () {
-                    if (api !== null) return;
-                    boton.disabled = true;
-                    mensaje.textContent = 'Conectando con Jitsi...';
+                        $ahora = now();
 
-                    const opciones = {
-                        roomName: 'ConsultorioLegal-Consulta-{{ $solicitud->id ?? $id ?? 1 }}',
-                        width: '100%',
-                        height: 600,
-                        parentNode: contenedor,
-                        lang: 'es',
-                        userInfo: {
-                            displayName: '{{ auth()->user()->name ?? "Usuario" }}'
-                        }
-                    };
+                        $turnoFinalizado = $ahora->gte($habilitadoHasta);
 
-                    api = new JitsiMeetExternalAPI('meet.jit.si', opciones);
+                        $puedeUnirse =
+                            $turno->estado === 'reservado' &&
+                            $turno->modalidad === 'virtual' &&
+                            $ahora->gte($habilitadoDesde) &&
+                            $ahora->lt($habilitadoHasta);
+                    @endphp
 
-                    api.addListener('videoConferenceJoined', function () {
-                        mensaje.textContent = 'Ya estás dentro de la videollamada.';
-                    });
-                    api.addListener('videoConferenceLeft', function () {
-                        mensaje.textContent = 'Saliste de la videollamada.';
-                    });
-                    api.addListener('readyToClose', function () {
-                        api = null;
-                        boton.disabled = false;
-                        mensaje.textContent = 'Presioná el botón para iniciar la consulta.';
-                    });
-                });
-            </script>
-        @else
-            <!-- Botón deshabilitado visualmente y aviso de horario -->
-            <button type="button" disabled style="background-color: #96a0a0; cursor: not-allowed;">
-                Videollamada no disponible aún
-            </button>
-            <p style="color: #8a6d3b; background-color: #fff9e6; border: 1px solid #ffe399; padding: 12px; border-radius: 4px; margin-top: 10px; font-size: 14px;">
-                El acceso a la videollamada se habilitará el <strong>{{ $fechaHoraTurno->format('d/m/Y') }}</strong> a partir de las <strong>{{ $habilitadoDesde->format('H:i') }} hs</strong> (10 minutos antes del turno).
-            </p>
+                    <div style="border: 1px solid #ddd;
+                                border-radius: 6px;
+                                padding: 15px;
+                                margin-bottom: 15px;">
+
+                        <h3 style="margin-bottom: 10px;">
+                            Turno #{{ $turno->id }}
+                        </h3>
+
+                        <p>
+                            <strong>Fecha:</strong>
+                            {{ $turno->inicio->format('d/m/Y') }}
+                        </p>
+
+                        <p>
+                            <strong>Horario:</strong>
+                            {{ $turno->inicio->format('H:i') }}
+                            a
+                            {{ $turno->fin->format('H:i') }} hs
+                        </p>
+
+                        <p>
+                            <strong>Modalidad:</strong>
+                            {{ ucfirst($turno->modalidad) }}
+                        </p>
+
+                        <p>
+                            <strong>Motivo:</strong>
+                            {{ $turno->motivo ?? 'Sin especificar' }}
+                        </p>
+
+                        <div style="margin-top: 15px;">
+
+                            @if ($turno->estado === 'cancelado')
+
+                                <p style="color: #dc3545;">
+                                    <strong>Estado: Cancelado</strong>
+                                </p>
+
+                            @elseif ($turnoFinalizado)
+
+                                <p style="color: #137333;">
+                                    <strong>Estado: Finalizado</strong>
+                                </p>
+
+                                <p>El horario de este turno ha finalizado.</p>
+
+                            @elseif ($puedeUnirse)
+
+                                <p style="color: #137333; margin-bottom: 10px;">
+                                    La sala de videollamada está habilitada.
+                                </p>
+
+                                <a href="{{ route('turnos.videollamada', $turno) }}"
+                                style="display: inline-block;
+                                        background: #1a3b47;
+                                        color: white;
+                                        padding: 10px 20px;
+                                        border-radius: 4px;
+                                        text-decoration: none;">
+
+                                    Iniciar videollamada
+
+                                </a>
+
+                            @elseif ($turno->modalidad === 'presencial')
+
+                                <p style="color: #b06000;">
+                                    <strong>Estado: Turno presencial programado</strong>
+                                </p>
+
+                            @else
+
+                                <p style="color: #b06000;">
+                                    <strong>Estado: Programado</strong>
+                                </p>
+
+                                <p>
+                                    La videollamada se habilitará el
+                                    {{ $habilitadoDesde->format('d/m/Y') }}
+                                    a las
+                                    {{ $habilitadoDesde->format('H:i') }} hs.
+                                </p>
+
+                            @endif
+
+                        </div>
+                    </div>
+
+                @empty
+
+                    <p>Todavía no hay turnos asociados a esta consulta.</p>
+
+                @endforelse
+
+            </div>
+
         @endif
-    </section>
-        @endif
+
     </main>
     <footer>Estudio Jurídico · Panel Profesional</footer>
 </body>

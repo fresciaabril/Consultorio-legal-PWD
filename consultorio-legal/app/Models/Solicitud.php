@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Solicitud extends Model
 {
@@ -22,4 +23,10 @@ class Solicitud extends Model
         'codigo_expira' => 'datetime',
         'email_verificado' => 'datetime',
     ];
+
+    // Una solicitud puede tener varios turnos
+    public function turnos(): HasMany
+    {
+        return $this->hasMany(Turno::class, 'solicitud_id');
+    }
 }

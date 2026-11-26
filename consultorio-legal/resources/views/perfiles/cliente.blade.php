@@ -527,10 +527,21 @@
                             <input type="hidden" name="inicio" id="inicio_turno" required>
 
                             <div class="form-reserva-grid">
-                                <div class="form-group">
-                                    <label for="fecha_visual">Fecha seleccionada</label>
-                                    <input type="text" id="fecha_visual" readonly>
-                                </div>
+                                
+                            <div class="form-group">
+                                <label for="solicitud_id">Solicitud asociada</label>
+
+                                <select name="solicitud_id" id="solicitud_id" required>
+                                    <option value="">Seleccioná una solicitud</option>
+
+                                    @foreach ($solicitudes->where('estado', 'aceptada') as $solicitud)
+                                        <option value="{{ $solicitud->id }}">
+                                            Consulta #{{ $solicitud->id }} - {{ $solicitud->area }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+
 
                                 <div class="form-group">
                                     <label for="hora_visual">Bloque horario (2 hs)</label>
@@ -716,6 +727,7 @@
                 btnSubmit.textContent = 'Reservando...';
 
                 const payload = {
+                    solicitud_id: parseInt(document.getElementById('solicitud_id').value, 10),
                     abogado_id: parseInt(document.getElementById('abogado_id').value, 10),
                     inicio: document.getElementById('inicio_turno').value,
                     modalidad: document.getElementById('modalidad_turno').value,

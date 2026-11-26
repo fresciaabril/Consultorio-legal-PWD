@@ -37,10 +37,13 @@
             $finTurno = \Carbon\Carbon::parse($turno->fin);
             $habilitadoDesde = $inicioTurno->copy()->subMinutes(10);
 
-            // para probar
-            $puedeUnirse = true;
+            $ahora = now();
 
-            //$puedeUnirse = now()->between($habilitadoDesde, $finTurno);
+            $puedeUnirse =
+                $turno->estado === 'reservado' &&
+                $turno->modalidad === 'virtual' &&
+                $ahora->gte($habilitadoDesde) &&
+                $ahora->lt($finTurno);
         @endphp
 
         <div class="card">
