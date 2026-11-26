@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Disponibilidad;
-use App\Services\AgendaService;
+
 
 class DisponibilidadController extends Controller
 {
@@ -60,54 +60,6 @@ class DisponibilidadController extends Controller
         return response()->json([
             'mensaje' => 'Disponibilidad guardada correctamente.',
             'disponibilidad' => $disponibilidad], 201);
-    }
-
-
-    public function horariosLibres(Request $request, AgendaService $agendaService)
-    {
-        // Solo clientes y abogados autenticados
-        $usuario = $request->user();
-
-        abort_unless(
-            in_array($usuario->rol, ['cliente', 'abogado']),
-            403
-        );
-
-        // Validamos la fecha y el abogado seleccionado
-        $datos = $request->validate([
-            'fecha' => 'required|date_format:Y-m-d|after_or_equal:today',
-            'abogado_id' => 'required|integer|exists:users,id',
-        ]);
-
-        // Comprobamos que realmente sea un abogado
-        $abogado = \App\Models\User::findOrFail($datos['abogado_id']);
-
-        if ($abogado->rol !== 'abogado') {
-            throw \Illuminate\Validation\ValidationException::withMessages([
-                'abogado_id' => 'El usuario seleccionado no es un abogado.',
-            ]);
-        }
-
-        // Consultamos los horarios del abogado seleccionado
-        $horarios = $agendaService->obtenerHorariosLibres(
-            $abogado->id,
-            $datos['fecha'],
-            120
-        );
-
-        return response()->json([
-            'fecha' => $datos['fecha'],
-            'abogado_id' => $abogado->id,
-            'horarios_libres' => $horarios,
-        ]);
-    }
-
-
-    public function configurar()
-    {
-        abort_unless(auth()->user()->rol === 'abogado', 403);
-
-        return view('agenda.configurar');
     }
 
     public function destroy($id)

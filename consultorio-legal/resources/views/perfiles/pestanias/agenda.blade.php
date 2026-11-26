@@ -173,32 +173,43 @@
     }
 
     async function cancelarTurnoAbogado(turnoId) {
-        if (!confirm('¿Confirmás que querés cancelar este turno? El horario volverá a quedar libre.')) {
-            return;
-        }
-
-        try {
-            const res = await fetch(`/turnos/${turnoId}`, {
-                method: 'DELETE',
-                headers: {
-                    'Accept': 'application/json',
-                    'X-CSRF-TOKEN': CSRF_TOKEN
-                }
-            });
-            const data = await res.json();
-
-            if (!res.ok) {
-                mostrarAlertaAbogado(data.mensaje || 'No se pudo cancelar el turno.', 'error');
-                return;
-            }
-
-            mostrarAlertaAbogado(data.mensaje || 'Turno cancelado correctamente.', 'exito');
-            document.getElementById('detalle-turno-seleccionado').style.display = 'none';
-            if (calendarioAbogado) {
-                calendarioAbogado.refetchEvents();
-            }
-        } catch (e) {
-            mostrarAlertaAbogado('Error de conexión al cancelar el turno.', 'error');
-        }
+    if (!confirm('¿Confirmás que querés cancelar este turno? El horario volverá a quedar libre para los clientes.')) {
+        return;
     }
+
+    try {
+        const respuesta = await fetch(`/turnos/${turnoId}`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRF-TOKEN': CSRF_TOKEN,
+                'Accept': 'application/json'
+            }
+        });
+
+        const data = await respuesta.json().catch(() => ({}));
+
+        if (!respuesta.ok) {
+            throw new Error(data.mensaje || data.message || 'No se pudo cancelar el turno.');
+        }
+
+        mostrarAlertaAbogado(data.mensaje || 'Turno cancelado correctamente.', 'exito');
+
+        if (calendarioAbogado) {
+            calendarioAbogado.refetchEvents();
+        }
+
+        const fila = document.getElementById(`turno-abogado-${turnoId}`);
+
+        if (fila) {
+            const acciones = fila.querySelector('.acciones-turno-abogado') || fila.lastElementChild;
+
+            if (acciones) {
+                acciones.innerHTML = '<span class="estado-tag estado-cancelado">Cancelado</span>';
+            }
+        }
+
+    } catch (error) {
+        mostrarAlertaAbogado(error.message, 'error');
+    }
+}
 </script>

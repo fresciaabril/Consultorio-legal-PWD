@@ -284,9 +284,6 @@ Route::get('/abogado/horarios-libres-rango', function (Request $request) {
     ]);
 })->middleware('auth')->name('abogado.horarios-libres-rango');
 
-Route::get('/abogado/agenda', [DisponibilidadController::class, 'configurar'])
-    ->middleware('auth')
-    ->name('abogado.agenda');
 
 Route::delete('/abogado/disponibilidades/{id}', [DisponibilidadController::class, 'destroy'])
     ->middleware('auth')
