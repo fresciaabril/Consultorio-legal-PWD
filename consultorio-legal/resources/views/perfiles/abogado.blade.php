@@ -220,6 +220,70 @@
             flex-wrap: wrap;
         }
 
+        .sala-bloque-deshabilitado {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 4px;
+        }
+
+        .aviso-sala-tiempo {
+            font-size: 11.5px;
+            color: #8a6d3b;
+            background-color: #fff9e6;
+            border: 1px solid #ffe399;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+
+        /* Modal de confirmación de cancelación */
+        .modal-confirmacion {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background-color: rgba(0, 0, 0, 0.45);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .modal-confirmacion.abierto { display: flex; }
+        .modal-confirmacion-caja {
+            background: #ffffff;
+            border-radius: 8px;
+            max-width: 420px;
+            width: 100%;
+            padding: 24px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        }
+        .modal-confirmacion-caja h3 {
+            color: #1a3b47;
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+        .modal-confirmacion-caja p {
+            color: #555555;
+            font-size: 14px;
+            line-height: 1.5;
+            margin-bottom: 20px;
+        }
+        .modal-confirmacion-acciones {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+        .btn-modal-secundario {
+            background-color: #e6e4dd;
+            color: #1a3b47;
+            border: none;
+            padding: 9px 16px;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
         footer {
             text-align: center;
             padding: 20px;
@@ -271,23 +335,6 @@
                 gap: 8px;
             }
         }
-
-        .sala-bloque-deshabilitado {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 4px;
-        }
-
-        .aviso-sala-tiempo {
-            font-size: 11.5px;
-            color: #8a6d3b;
-            background-color: #fff9e6;
-            border: 1px solid #ffe399;
-            padding: 3px 8px;
-            border-radius: 4px;
-            font-weight: 500;
-        }
     </style>
 </head>
 <body>
@@ -332,6 +379,20 @@
         @include('perfiles.pestanias.bloqueos')
     </main>
 
+    <!-- Modal de confirmación para cancelar turno -->
+    <div id="modal-cancelar-turno" class="modal-confirmacion">
+        <div class="modal-confirmacion-caja">
+            <h3>Cancelar turno</h3>
+            <p>¿Confirmás que querés cancelar este turno? El bloque horario volverá a quedar libre para los clientes.</p>
+            <div class="modal-confirmacion-acciones">
+                <button type="button" class="btn-modal-secundario" onclick="cerrarModalCancelarTurno()">Volver</button>
+                <button type="button" id="btn-confirmar-cancelacion-turno" class="btn-guardar btn-bloquear" style="padding: 9px 16px; font-size: 14px;">
+                    Sí, cancelar turno
+                </button>
+            </div>
+        </div>
+    </div>
+
     <footer>
         Estudio Jurídico · Panel Profesional
     </footer>
@@ -339,6 +400,7 @@
     <script>
         const CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
         let calendarioAbogado = null;
+        let turnoIdPendienteCancelar = null;
 
         document.addEventListener('DOMContentLoaded', function() {
             const calendarEl = document.getElementById('calendario-abogado');
@@ -446,6 +508,12 @@
             calendarioAbogado.render();
             if (typeof cargarDisponibilidades === 'function') cargarDisponibilidades();
             if (typeof cargarBloqueos === 'function') cargarBloqueos();
+
+            // Botón de confirmación dentro del modal de cancelación
+            const btnConfirmarCancelacion = document.getElementById('btn-confirmar-cancelacion-turno');
+            if (btnConfirmarCancelacion) {
+                btnConfirmarCancelacion.addEventListener('click', ejecutarCancelacionTurnoAbogado);
+            }
         });
 
         let temporizadorAlertaAbogado = null;
@@ -484,6 +552,67 @@
             }
         }
 
+        // Abre el modal para confirmar la cancelación del turno
+        function cancelarTurnoAbogado(turnoId) {
+            turnoIdPendienteCancelar = turnoId;
+            const modal = document.getElementById('modal-cancelar-turno');
+            if (modal) modal.classList.add('abierto');
+        }
+
+        function cerrarModalCancelarTurno() {
+            turnoIdPendienteCancelar = null;
+            const modal = document.getElementById('modal-cancelar-turno');
+            if (modal) modal.classList.remove('abierto');
+        }
+
+        // Ejecuta la petición DELETE /turnos/{id} al confirmar en el modal
+        async function ejecutarCancelacionTurnoAbogado() {
+            if (!turnoIdPendienteCancelar) return;
+
+            const turnoId = turnoIdPendienteCancelar;
+            const btn = document.getElementById('btn-confirmar-cancelacion-turno');
+            btn.disabled = true;
+            btn.textContent = 'Cancelando...';
+
+            try {
+                const respuesta = await fetch(`/turnos/${turnoId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRF-TOKEN': CSRF_TOKEN,
+                        'Accept': 'application/json'
+                    }
+                });
+
+                const data = await respuesta.json().catch(() => ({}));
+
+                if (!respuesta.ok) {
+                    throw new Error(data.mensaje || data.message || 'No se pudo cancelar el turno.');
+                }
+
+                cerrarModalCancelarTurno();
+                mostrarAlertaAbogado(data.mensaje || 'Turno cancelado correctamente.', 'exito');
+
+                // Oculta el panel de detalle abierto si mostraba ese turno
+                const panelDetalle = document.getElementById('detalle-turno-seleccionado');
+                if (panelDetalle) panelDetalle.style.display = 'none';
+
+                // Refresca el calendario y la lista de turnos
+                if (calendarioAbogado) {
+                    calendarioAbogado.refetchEvents();
+                }
+
+                const fila = document.getElementById(`turno-abogado-${turnoId}`);
+                if (fila) {
+                    fila.remove();
+                }
+            } catch (error) {
+                cerrarModalCancelarTurno();
+                mostrarAlertaAbogado(error.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Sí, cancelar turno';
+            }
+        }
     </script>
 
 </body>

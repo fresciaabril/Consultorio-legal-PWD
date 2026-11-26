@@ -43,8 +43,6 @@
             align-items: center;
         }
 
-    
-
         /* Estilo unificado para Volver al Panel y Cerrar sesión */
         .btn-logout {
             background-color: transparent;
@@ -208,10 +206,10 @@
             color: #777777;
             margin-top: auto;
         }
+
         @media (max-width: 768px) {
             header { padding: 18px 15px; flex-direction: column; gap: 12px; text-align: center; }
             main { padding: 0 12px; margin: 18px auto; }
-            #jitsi-container { height: 420px; min-height: 420px; }
         }
     </style>
 </head>
@@ -260,13 +258,22 @@
                 <div class="form-group">
                     <label for="foto">Foto profesional (para la página de inicio)</label>
                     <div style="display: flex; align-items: center; gap: 16px; margin-top: 6px; margin-bottom: 6px;">
-                        @if (!empty($perfil['foto']))
-                            <img src="{{ asset('storage/' . $perfil['foto']) }}" alt="Foto del profesional" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid #1a3b47;">
+                        @php
+                            // Prioriza la foto subida al storage local; si no existe en esta PC, usa public/images/abogado.jpg
+                            $tieneFotoStorage = !empty($perfil['foto']) && file_exists(public_path('storage/' . $perfil['foto']));
+                            $rutaImagen = $tieneFotoStorage
+                                ? asset('storage/' . $perfil['foto'])
+                                : (file_exists(public_path('images/abogado.jpg')) ? asset('images/abogado.jpg') : null);
+                        @endphp
+
+                        @if ($rutaImagen)
+                            <img src="{{ $rutaImagen }}" alt="Foto del profesional" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid #1a3b47;">
                         @else
                             <div style="width: 80px; height: 80px; border-radius: 50%; background-color: #e6eef2; color: #1a3b47; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 22px; border: 2px solid #cbd8de;">
                                 MF
                             </div>
                         @endif
+
                         <div style="flex: 1;">
                             <input type="file" name="foto" id="foto" accept="image/png, image/jpeg, image/webp">
                             <small style="display: block; margin-top: 4px;">Formatos permitidos: JPG, PNG o WEBP (máximo 2 MB).</small>
