@@ -253,11 +253,27 @@
             <p class="subtitulo">
                 Actualizá tus datos personales y la descripción que se muestra en la página de inicio del estudio.
             </p>
-            <form action="{{ route('abogado.perfil.actualizar') }}" method="POST">
+            <form action="{{ route('abogado.perfil.actualizar') }}" method="POST" enctype="multipart/form-data">
                 @csrf
-                <!-- Directiva Blade que simula el método HTTP PUT para actualizar registros -->
                 @method('PUT')
 
+                <div class="form-group">
+                    <label for="foto">Foto profesional (para la página de inicio)</label>
+                    <div style="display: flex; align-items: center; gap: 16px; margin-top: 6px; margin-bottom: 6px;">
+                        @if (!empty($perfil['foto']))
+                            <img src="{{ asset('storage/' . $perfil['foto']) }}" alt="Foto del profesional" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid #1a3b47;">
+                        @else
+                            <div style="width: 80px; height: 80px; border-radius: 50%; background-color: #e6eef2; color: #1a3b47; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 22px; border: 2px solid #cbd8de;">
+                                MF
+                            </div>
+                        @endif
+                        <div style="flex: 1;">
+                            <input type="file" name="foto" id="foto" accept="image/png, image/jpeg, image/webp">
+                            <small style="display: block; margin-top: 4px;">Formatos permitidos: JPG, PNG o WEBP (máximo 2 MB).</small>
+                        </div>
+                    </div>
+                </div>
+                
                 <div class="form-grid">
                     <div class="form-group" style="margin-bottom: 0;">
                         <label for="nombre">Nombre profesional</label>

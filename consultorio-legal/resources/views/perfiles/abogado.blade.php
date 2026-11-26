@@ -271,6 +271,23 @@
         gap: 8px;
     }
 }
+
+    .sala-bloque-deshabilitado {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+    }
+
+    .aviso-sala-tiempo {
+        font-size: 11.5px;
+        color: #8a6d3b;
+        background-color: #fff9e6;
+        border: 1px solid #ffe399;
+        padding: 3px 8px;
+        border-radius: 4px;
+        font-weight: 500;
+    }
     </style>
 </head>
 <body>
