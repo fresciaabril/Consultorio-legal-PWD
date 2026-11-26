@@ -292,12 +292,20 @@
     <main>
         <!-- COLUMNA IZQUIERDA: Sobre el profesional arriba + Asesoramiento abajo -->
         <div class="columna-izquierda">
-            <!-- 1. Presentación profesional dinámica desde la base de datos -->
+            <!-- 1. Presentación profesional dinámica -->
             <div class="card">
                 <h3>Sobre el Profesional</h3>
                 <div class="profesional-contenedor">
-                    @if (!empty($abogado?->foto))
-                        <img src="{{ asset('storage/' . $abogado->foto) }}"
+                    @php
+                        // Prioriza la foto subida al storage local; si no existe en esta PC, usa public/images/abogado.jpg
+                        $tieneFotoStorage = !empty($abogado?->foto) && file_exists(public_path('storage/' . $abogado->foto));
+                        $rutaImagen =$tieneFotoStorage
+                            ? asset('storage/' . $abogado->foto)
+                            : (file_exists(public_path('images/abogado.jpg')) ? asset('images/abogado.jpg') : null);
+                    @endphp
+
+                    @if ($rutaImagen)
+                        <img src="{{ $rutaImagen }}"
                              alt="{{ $abogado->name ?? 'Dr. Martín Alejandro Fernández' }}"
                              class="profesional-foto">
                     @else
@@ -358,24 +366,4 @@
                 <ul class="lista-areas">
                     <li>
                         <strong>Derecho Civil</strong>
-                        <span>Contratos de alquiler, compraventa, sucesiones, daños y perjuicios y reclamos particulares.</span>
-                    </li>
-                    <li>
-                        <strong>Derecho Laboral</strong>
-                        <span>Despidos sin causa, liquidaciones finales, accidentes de trabajo y diferencias salariales.</span>
-                    </li>
-                    <li>
-                        <strong>Derecho de Familia</strong>
-                        <span>Divorcios, cuota alimentaria, régimen de comunicación y acuerdos familiares.</span>
-                    </li>
-                </ul>
-            </div>
-        </aside>
-    </main>
-
-    <footer>
-        Estudio Jurídico · Atención con cita previa
-    </footer>
-
-</body>
-</html>
+                        <span>Contratos de alquiler, compr
