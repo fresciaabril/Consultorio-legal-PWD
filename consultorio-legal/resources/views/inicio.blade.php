@@ -297,17 +297,19 @@
                 <h3>Sobre el Profesional</h3>
                 <div class="profesional-contenedor">
                     @php
-                        // Prioriza la foto subida al storage local; si no existe en esta PC, usa public/images/abogado.jpg
+                        // Prioriza la foto subida al storage local.
+                        // Si no existe, utiliza la imagen de respaldo.
                         $tieneFotoStorage = !empty($abogado?->foto) && file_exists(public_path('storage/' . $abogado->foto));
+
                         $rutaImagen = $tieneFotoStorage
                             ? asset('storage/' . $abogado->foto)
-                            : (file_exists(public_path('images/abogado.jpg')) ? asset('images/abogado.jpg') : null);
+                            : (file_exists(public_path('images/abogado.png')) ? asset('images/abogado.png') : null);
                     @endphp
 
                     @if ($rutaImagen)
                         <img src="{{ $rutaImagen }}"
-                             alt="{{ $abogado->name ?? 'Dr. Martín Alejandro Fernández' }}"
-                             class="profesional-foto">
+                            alt="{{ $abogado->name ?? 'Dr. Martín Alejandro Fernández' }}"
+                            class="profesional-foto">
                     @else
                         <div class="profesional-avatar">
                             MF

@@ -495,11 +495,15 @@
                 },
                 eventClick: function(info) {
                     const props = info.event.extendedProps;
+
                     if (props.tipo === 'turno' && props.turno) {
                         if (typeof mostrarDetalleTurnoAbogado === 'function') {
                             mostrarDetalleTurnoAbogado(props.turno);
-                        } else if (props.turno.estado !== 'cancelado' && props.turno.modalidad === 'virtual') {
-                            window.location.href = `/turnos/${props.turno.id}/videollamada`;
+                        } else {
+                            mostrarAlertaAbogado(
+                                'No se pudieron mostrar los detalles del turno.',
+                                'error'
+                            );
                         }
                     }
                 }

@@ -472,8 +472,6 @@
 
         <!-- COLUMNA DERECHA: BOTONES DE PESTAÑAS + CONTENIDO DE CADA SECCIÓN -->
         <div class="contenido-principal">
-            <!-- Contenedor de mensajes de éxito o error al reservar -->
-            <div id="alerta-cliente" class="alerta"></div>
 
             <!-- Botonera de 3 pestañas -->
             <div class="tabs-nav">
@@ -513,7 +511,11 @@
 
             <!-- PESTAÑA 2: RESERVAR TURNO (CON FULLCALENDAR) -->
             <div id="tab-reservar-turno" class="tab-content">
-                <div class="card">
+
+            <!-- Contenedor de mensajes de éxito o error al reservar -->
+            <div id="alerta-cliente" class="alerta"></div>
+
+            <div class="card">
                     <h2>Reservar Turno (Bloques de 2 horas)</h2>
                     <p style="font-size: 14px; color: #555555; margin-bottom: 18px;">
                         Seleccioná un bloque horario disponible (en verde) para coordinar tu entrevista con <strong>{{ $abogado->name ?? 'el profesional' }}</strong>.
@@ -603,7 +605,12 @@
                                 </div>
 
                                 <div style="display: flex; gap: 10px; align-items: center;">
-                                    @if ($turno->modalidad === 'virtual' && $turno->estado === 'reservado')
+                                    @if (
+                                        $turno->modalidad === 'virtual'
+                                        && $turno->estado === 'reservado'
+                                        && now()->gte($inicioTurno->copy()->subMinutes(10))
+                                        && now()->lt($finTurno)
+                                    )
                                         <a href="/turnos/{{ $turno->id }}/videollamada" class="btn-detalles">
                                             Sala de reunión
                                         </a>
@@ -793,7 +800,12 @@
                     const modalidadCap = t.modalidad.charAt(0).toUpperCase() + t.modalidad.slice(1);
                     const estadoCap = t.estado.charAt(0).toUpperCase() + t.estado.slice(1);
 
-                    const botonJitsi = (t.modalidad === 'virtual' && t.estado === 'reservado')
+                    const ahora = new Date();
+                    const habilitadoDesde = new Date(inicio.getTime() - 10 * 60 * 1000);
+
+                    const puedeUnirse = t.modalidad === 'virtual' && t.estado === 'reservado' &&  ahora >= habilitadoDesde && ahora < fin;
+
+                    const botonJitsi = puedeUnirse
                         ? `<a href="/turnos/${t.id}/videollamada" class="btn-detalles">Sala de reunión</a>`
                         : '';
 
@@ -826,12 +838,22 @@
             }
         }
 
+        let temporizadorAlerta;
+
         function mostrarAlerta(texto, tipo) {
             const alerta = document.getElementById('alerta-cliente');
+
+            clearTimeout(temporizadorAlerta);
+
             alerta.textContent = texto;
             alerta.className = 'alerta ' + (tipo === 'exito' ? 'alerta-exito' : 'alerta-error');
             alerta.style.display = 'block';
             alerta.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+            temporizadorAlerta = setTimeout(function () {
+                alerta.style.display = 'none';
+                alerta.textContent = '';
+            }, 4000);
         }
 
         function escapeHtml(texto) {
