@@ -192,6 +192,11 @@ Route::get('/consultas/abogado/{id}', function ($id) {
 Route::get('/solicitudes/seguimiento/{token}', [SolicitudController::class, 'seguimiento'])
     ->name('solicitudes.seguimiento');
 
+// Verificar el correo y habilitar el registro
+Route::get('/solicitudes/registro/{token}', [SolicitudController::class, 'habilitarRegistro'])
+    ->middleware('signed')
+    ->name('solicitudes.habilitarRegistro');
+
 Route::post('/solicitudes/seguimiento/{token}/enviar-codigo', [SolicitudController::class, 'enviarCodigo'])
     ->middleware('throttle:3,10')
     ->name('solicitudes.enviarCodigo');

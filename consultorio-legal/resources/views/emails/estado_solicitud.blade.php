@@ -47,7 +47,7 @@
 
             <div style="text-align: center; margin: 30px 0;">
 
-                <a href="{{ route('solicitudes.seguimiento', ['token' => $solicitud->token_seguimiento]) }}"
+                <a href="{{ $enlace }}"
                    style="background-color: #244438; color: white; padding: 15px 25px; text-decoration: none; border-radius: 6px; display: inline-block;">
 
                     @if ($solicitud->estado === 'aceptada')

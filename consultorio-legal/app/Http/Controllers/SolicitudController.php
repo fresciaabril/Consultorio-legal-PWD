@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\RateLimiter; //limita el envio de codigos
+use Illuminate\Support\Facades\URL;
 
 class SolicitudController extends Controller
 {
@@ -65,6 +66,37 @@ class SolicitudController extends Controller
         )->firstOrFail();
 
         return view('solicitudes.seguimiento', compact('solicitud'));
+    }
+
+    public function habilitarRegistro(Request $request, string $token)
+    {
+        // Buscar la solicitud mediante su token
+        $solicitud = Solicitud::where('token_seguimiento', $token)
+            ->firstOrFail();
+
+        // Comprobar que la solicitud esté aceptada
+        if ($solicitud->estado !== 'aceptada') {
+            abort(403, 'La solicitud no está aceptada.');
+        }
+
+        // Comprobar que el cliente no tenga una cuenta
+        if (User::where('email', $solicitud->email)->exists()) {
+            return redirect()->route('login')
+                ->with('exito', 'Este correo ya tiene una cuenta.');
+        }
+
+        // Marcar el correo como verificado
+        $solicitud->email_verificado = now();
+        $solicitud->save();
+
+        // Guardar el permiso de registro en la sesión
+        $request->session()->regenerate();
+        $request->session()->put('solicitud_verificada', $token);
+
+        // Volver a la pantalla de seguimiento
+        return redirect()->route('solicitudes.seguimiento', [
+            'token' => $token
+        ]);
     }
 
     // Generar y enviar el código de verificación
@@ -267,28 +299,44 @@ class SolicitudController extends Controller
         return back();
     }
 
-    //enviar correo con el estado de la solicitud
-    private function enviarCorreoEstado(Solicitud $solicitud){
-        $asunto = match ($solicitud->estado){
+    private function enviarCorreoEstado(Solicitud $solicitud)
+    {
+        $asunto = match ($solicitud->estado) {
             'pendiente' => 'Solicitud recibida - Consultorio Legal',
             'aceptada' => 'Tu solicitud fue aceptada - Consultorio Legal',
             'rechazada' => 'Estado de tu solicitud - Consultorio Legal',
             default => 'Consultorio Legal',
         };
 
-        try{
+        // Generamos el enlace de acuerdo al estado
+        if ($solicitud->estado === 'aceptada') {
+            $enlace = URL::temporarySignedRoute(
+                'solicitudes.habilitarRegistro',
+                now()->addDays(7),
+                ['token' => $solicitud->token_seguimiento]
+            );
+        } else {
+            $enlace = route('solicitudes.seguimiento', [
+                'token' => $solicitud->token_seguimiento
+            ]);
+        }
+
+        try {
             Mail::send(
                 'emails.estado_solicitud',
-                ['solicitud' => $solicitud],
-                function ($mensaje) use ($solicitud, $asunto){
+                [
+                    'solicitud' => $solicitud,
+                    'enlace' => $enlace
+                ],
+                function ($mensaje) use ($solicitud, $asunto) {
                     $mensaje->to($solicitud->email)
-                    ->subject($asunto);
+                        ->subject($asunto);
                 }
             );
-        } 
-        catch (\Exception $e){
+        } catch (\Exception $e) {
             \Illuminate\Support\Facades\Log::error(
-            'No se pudo enviar el correo de la solicitud ID: ' . $solicitud->id);
+                'No se pudo enviar el correo de la solicitud ID: ' . $solicitud->id
+            );
         }
     }
 }

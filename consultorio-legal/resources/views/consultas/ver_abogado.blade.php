@@ -49,7 +49,31 @@
             <p style="background: #fafafa; padding: 12px; border: 1px solid #eee; border-radius: 4px; margin-top: 5px;">
                 {{ $solicitud->descripcion }}
             </p>
-        </div>
+
+        @if ($solicitud->estado === 'pendiente')
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+
+                <form action="/solicitudes/{{ $solicitud->id }}/aceptar" method="POST">
+                    @csrf
+                    @method('PATCH')
+
+                    <button type="submit" class="btn-accion btn-aceptar">
+                        Aceptar solicitud
+                    </button>
+                </form>
+
+                <form action="/solicitudes/{{ $solicitud->id }}/rechazar" method="POST">
+                    @csrf
+                    @method('PATCH')
+
+                    <button type="submit" class="btn-accion btn-rechazar">
+                        Rechazar solicitud
+                    </button>
+                </form>
+
+            </div>
+        @endif
+    </div>
 
         @if ($solicitud->estado === 'aceptada')
 
