@@ -197,14 +197,6 @@ Route::get('/solicitudes/registro/{token}', [SolicitudController::class, 'habili
     ->middleware('signed')
     ->name('solicitudes.habilitarRegistro');
 
-Route::post('/solicitudes/seguimiento/{token}/enviar-codigo', [SolicitudController::class, 'enviarCodigo'])
-    ->middleware('throttle:3,10')
-    ->name('solicitudes.enviarCodigo');
-
-Route::post('/solicitudes/seguimiento/{token}/verificar-codigo', [SolicitudController::class, 'verificarCodigo'])
-    ->middleware('throttle:5,10')
-    ->name('solicitudes.verificarCodigo');
-
 
 // TURNOS Y VIDEOLLAMADAS JITSI
 Route::get('/turnos', [TurnoController::class, 'index'])
