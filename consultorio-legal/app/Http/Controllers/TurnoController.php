@@ -28,11 +28,11 @@ class TurnoController extends Controller
         } else {
             abort(403, 'No tenés permiso para consultar turnos.');
         }
-        return response()->json($turnos); // Ejecuta la consulta y devuelve una colección de turnos.
+        return response()->json($turnos); // Ejecuta la consulta y devuelve una colección de turnos
     }
 
 
-    // Cancelar un turno (solo el abogado y hasta 1 día antes del inicio)
+    // Cancelar un turno ,solo el abogado y hasta 1 día antes del inicio
     public function destroy(Request $request, Turno $turno){
         $usuario = $request->user();
         if ($usuario->rol !== 'abogado' || (int) $turno->abogado_id !== (int) $usuario->id){
@@ -70,8 +70,7 @@ class TurnoController extends Controller
             'motivo' => 'nullable|string|max:1000',
         ]);
 
-        // Verificamos que la solicitud pertenezca al cliente
-        // y haya sido aceptada por el abogado.
+        // Verificamos que la solicitud pertenezca al cliente y haya sido aceptada por el abogado
         $solicitud = Solicitud::where('id', $datos['solicitud_id'])
             ->where('email', $usuario->email)
             ->where('estado', 'aceptada')
@@ -149,7 +148,7 @@ class TurnoController extends Controller
     {
         $usuario = auth()->user();
 
-        // 1. Control de acceso
+        //  Control de acceso
         $esCliente = $usuario->rol === 'cliente'
             && (int) $turno->cliente_id === (int) $usuario->id;
 
@@ -162,7 +161,7 @@ class TurnoController extends Controller
             'No tenés permiso para acceder a esta videollamada.'
         );
 
-        // 2. Validar modalidad y estado
+        //  Validar modalidad y estado
         abort_if(
             $turno->modalidad !== 'virtual',
             403,
@@ -175,27 +174,27 @@ class TurnoController extends Controller
             'Este turno no está disponible.'
         );
 
-        // 3. Definir el horario permitido
+        //  Definir el horario permitido
         $habilitadoDesde = $turno->inicio->copy()->subMinutes(10);
         $habilitadoHasta = $turno->fin;
 
         $ahora = now();
 
-        // 4. Verificar que el turno no haya finalizado
+        //  Verificar que el turno no haya finalizado
         abort_if(
             $ahora->gte($habilitadoHasta),
             403,
             'El horario de esta videollamada ha finalizado.'
         );
 
-        // 5. Verificar que la sala ya esté habilitada
+        //  Verificar que la sala ya esté habilitada
         abort_if(
             $ahora->lt($habilitadoDesde),
             403,
             'La videollamada todavía no está habilitada.'
         );
 
-        // 6. Cargar los datos del cliente y abogado
+        //  Cargar los datos del cliente y abogado
         $turno->load(['cliente', 'abogado']);
 
         return view('consultas.videollamada_turno', compact('turno'));
