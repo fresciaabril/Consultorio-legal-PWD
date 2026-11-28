@@ -49,61 +49,153 @@
             <p style="background: #fafafa; padding: 12px; border: 1px solid #eee; border-radius: 4px; margin-top: 5px;">
                 {{ $solicitud->descripcion }}
             </p>
-        </div>
 
-        @if ($solicitud->estado === 'aceptada')
-            <div class="card">
-                <h2>Sala de Audiencia / Videollamada</h2>
-                <p id="mensaje" style="margin-bottom: 15px;">Presioná para iniciar la sesión con el cliente.</p>
-                <button id="iniciar" class="btn-accion btn-aceptar">Iniciar videollamada</button>
-                <div id="jitsi-container"></div>
-            </div>
+        @if ($solicitud->estado === 'pendiente')
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
 
-            <script src="https://meet.jit.si/external_api.js"></script>
-            <script>
-                let api = null;
-                document.getElementById('iniciar').addEventListener('click', function () {
-                    if (api !== null) return;
-                    this.disabled = true;
-                    document.getElementById('mensaje').textContent = 'Iniciando sala...';
-                    api = new JitsiMeetExternalAPI('meet.jit.si', {
-                        roomName: 'ConsultorioLegal-Consulta-{{ $solicitud->id }}',
-                        width: '100%', height: 600,
-                        parentNode: document.getElementById('jitsi-container'), lang: 'es'
-                    });
-                });
-            </script>
-        @elseif ($solicitud->estado === 'pendiente')
-            <div class="card" style="background-color: #fff9e6; border: 1px solid #ffe399;">
-                <h3 style="color: #8a6d3b; margin-bottom: 10px;">Acciones de Gestión</h3>
-                <p style="color: #8a6d3b; margin-bottom: 15px;">Evaluá la solicitud para aceptarla o denegarla:</p>
-                
-                
-                <div style="display: flex; gap: 10px;">
+                <form action="/solicitudes/{{ $solicitud->id }}/aceptar" method="POST">
+                    @csrf
+                    @method('PATCH')
 
-                    <!-- ACEPTAR SOLICITUD -->
-                    <form action="/solicitudes/{{ $solicitud->id }}/aceptar" method="POST">
-                        @csrf
-                        @method('PATCH')
+                    <button type="submit" class="btn-accion btn-aceptar">
+                        Aceptar solicitud
+                    </button>
+                </form>
 
-                        <button type="submit" class="btn-accion btn-aceptar">
-                            Aceptar consulta
-                        </button>
-                    </form>
+                <form action="/solicitudes/{{ $solicitud->id }}/rechazar" method="POST">
+                    @csrf
+                    @method('PATCH')
 
-                    <!-- RECHAZAR SOLICITUD -->
-                    <form action="/solicitudes/{{ $solicitud->id }}/rechazar" method="POST">
-                        @csrf
-                        @method('PATCH')
-
-                        <button type="submit" class="btn-accion btn-rechazar">
-                            Rechazar consulta
-                        </button>
-                    </form>
-                </div>
+                    <button type="submit" class="btn-accion btn-rechazar">
+                        Rechazar solicitud
+                    </button>
+                </form>
 
             </div>
         @endif
+    </div>
+
+        @if ($solicitud->estado === 'aceptada')
+
+            <div class="card">
+                <h2>Turnos de la consulta</h2>
+
+                @forelse ($turnos as $turno)
+
+                    @php
+                        $habilitadoDesde = $turno->inicio->copy()->subMinutes(10);
+                        $habilitadoHasta = $turno->fin;
+
+                        $ahora = now();
+
+                        $turnoFinalizado = $ahora->gte($habilitadoHasta);
+
+                        $puedeUnirse =
+                            $turno->estado === 'reservado' &&
+                            $turno->modalidad === 'virtual' &&
+                            $ahora->gte($habilitadoDesde) &&
+                            $ahora->lt($habilitadoHasta);
+                    @endphp
+
+                    <div style="border: 1px solid #ddd;
+                                border-radius: 6px;
+                                padding: 15px;
+                                margin-bottom: 15px;">
+
+                        <h3 style="margin-bottom: 10px;">
+                            Turno #{{ $turno->id }}
+                        </h3>
+
+                        <p>
+                            <strong>Fecha:</strong>
+                            {{ $turno->inicio->format('d/m/Y') }}
+                        </p>
+
+                        <p>
+                            <strong>Horario:</strong>
+                            {{ $turno->inicio->format('H:i') }}
+                            a
+                            {{ $turno->fin->format('H:i') }} hs
+                        </p>
+
+                        <p>
+                            <strong>Modalidad:</strong>
+                            {{ ucfirst($turno->modalidad) }}
+                        </p>
+
+                        <p>
+                            <strong>Motivo:</strong>
+                            {{ $turno->motivo ?? 'Sin especificar' }}
+                        </p>
+
+                        <div style="margin-top: 15px;">
+
+                            @if ($turno->estado === 'cancelado')
+
+                                <p style="color: #dc3545;">
+                                    <strong>Estado: Cancelado</strong>
+                                </p>
+
+                            @elseif ($turnoFinalizado)
+
+                                <p style="color: #137333;">
+                                    <strong>Estado: Finalizado</strong>
+                                </p>
+
+                                <p>El horario de este turno ha finalizado.</p>
+
+                            @elseif ($puedeUnirse)
+
+                                <p style="color: #137333; margin-bottom: 10px;">
+                                    La sala de videollamada está habilitada.
+                                </p>
+
+                                <a href="{{ route('turnos.videollamada', $turno) }}"
+                                style="display: inline-block;
+                                        background: #1a3b47;
+                                        color: white;
+                                        padding: 10px 20px;
+                                        border-radius: 4px;
+                                        text-decoration: none;">
+
+                                    Iniciar videollamada
+
+                                </a>
+
+                            @elseif ($turno->modalidad === 'presencial')
+
+                                <p style="color: #b06000;">
+                                    <strong>Estado: Turno presencial programado</strong>
+                                </p>
+
+                            @else
+
+                                <p style="color: #b06000;">
+                                    <strong>Estado: Programado</strong>
+                                </p>
+
+                                <p>
+                                    La videollamada se habilitará el
+                                    {{ $habilitadoDesde->format('d/m/Y') }}
+                                    a las
+                                    {{ $habilitadoDesde->format('H:i') }} hs.
+                                </p>
+
+                            @endif
+
+                        </div>
+                    </div>
+
+                @empty
+
+                    <p>Todavía no hay turnos asociados a esta consulta.</p>
+
+                @endforelse
+
+            </div>
+
+        @endif
+
     </main>
     <footer>Estudio Jurídico · Panel Profesional</footer>
 </body>

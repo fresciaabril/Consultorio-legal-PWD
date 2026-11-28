@@ -29,9 +29,8 @@
 <body>
     <header>
         <h1>Estudio Jurídico</h1>
-        <a href="javascript:window.close()" class="btn-volver">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-            Cerrar ventana
+        <a href="{{ route('perfil') }}" class="btn-volver">
+           ← Volver a mi perfil
         </a>
     </header>
 
@@ -50,35 +49,126 @@
         </div>
 
         @if ($solicitud->estado === 'aceptada')
+
             <div class="card">
-                <h2>Reunión</h2>
-                <p id="mensaje" style="margin-bottom: 15px;">Presioná el botón cuando estés listo para conectarte.</p>
-                <button id="iniciar">Iniciar videollamada</button>
-                <div id="jitsi-container"></div>
+                <h2>Turnos de la consulta</h2>
+
+                @forelse ($turnos as $turno)
+
+                    @php
+                        $habilitadoDesde = $turno->inicio->copy()->subMinutes(10);
+                        $habilitadoHasta = $turno->fin;
+
+                        $ahora = now();
+
+                        $turnoFinalizado = $ahora->gte($habilitadoHasta);
+
+                        $puedeUnirse =
+                            $turno->estado === 'reservado' &&
+                            $turno->modalidad === 'virtual' &&
+                            $ahora->gte($habilitadoDesde) &&
+                            $ahora->lt($habilitadoHasta);
+                    @endphp
+
+                    <div style="border: 1px solid #ddd;
+                                border-radius: 6px;
+                                padding: 15px;
+                                margin-bottom: 15px;">
+
+                        <h3 style="margin-bottom: 10px;">
+                            Turno #{{ $turno->id }}
+                        </h3>
+
+                        <p>
+                            <strong>Fecha:</strong>
+                            {{ $turno->inicio->format('d/m/Y') }}
+                        </p>
+
+                        <p>
+                            <strong>Horario:</strong>
+                            {{ $turno->inicio->format('H:i') }}
+                            a
+                            {{ $turno->fin->format('H:i') }} hs
+                        </p>
+
+                        <p>
+                            <strong>Modalidad:</strong>
+                            {{ ucfirst($turno->modalidad) }}
+                        </p>
+
+                        <p>
+                            <strong>Motivo:</strong>
+                            {{ $turno->motivo ?? 'Sin especificar' }}
+                        </p>
+
+                        <div style="margin-top: 15px;">
+
+                            @if ($turno->estado === 'cancelado')
+
+                                <p style="color: #dc3545;">
+                                    <strong>Estado: Cancelado</strong>
+                                </p>
+
+                            @elseif ($turnoFinalizado)
+
+                                <p style="color: #137333;">
+                                    <strong>Estado: Finalizado</strong>
+                                </p>
+
+                                <p>El horario de este turno ha finalizado.</p>
+
+                            @elseif ($puedeUnirse)
+
+                                <p style="color: #137333; margin-bottom: 10px;">
+                                    La sala de videollamada está habilitada.
+                                </p>
+
+                                <a href="{{ route('turnos.videollamada', $turno) }}"
+                                style="display: inline-block;
+                                        background: #1a3b47;
+                                        color: white;
+                                        padding: 10px 20px;
+                                        border-radius: 4px;
+                                        text-decoration: none;">
+
+                                    Iniciar videollamada
+
+                                </a>
+
+                            @elseif ($turno->modalidad === 'presencial')
+
+                                <p style="color: #b06000;">
+                                    <strong>Estado: Turno presencial programado</strong>
+                                </p>
+
+                            @else
+
+                                <p style="color: #b06000;">
+                                    <strong>Estado: Programado</strong>
+                                </p>
+
+                                <p>
+                                    La videollamada se habilitará el
+                                    {{ $habilitadoDesde->format('d/m/Y') }}
+                                    a las
+                                    {{ $habilitadoDesde->format('H:i') }} hs.
+                                </p>
+
+                            @endif
+
+                        </div>
+                    </div>
+
+                @empty
+
+                    <p>Todavía no hay turnos asociados a esta consulta.</p>
+
+                @endforelse
+
             </div>
 
-            <script src="https://meet.jit.si/external_api.js"></script>
-            <script>
-                let api = null;
-                document.getElementById('iniciar').addEventListener('click', function () {
-                    if (api !== null) return;
-                    this.disabled = true;
-                    document.getElementById('mensaje').textContent = 'Conectando con la videollamada...';
-                    api = new JitsiMeetExternalAPI('meet.jit.si', {
-                        roomName: 'ConsultorioLegal-Consulta-{{ $solicitud->id }}',
-                        width: '100%', height: 600,
-                        parentNode: document.getElementById('jitsi-container'), lang: 'es'
-                    });
-                });
-            </script>
-        @else
-            <div class="card" style="background-color: #fff9e6; border: 1px solid #ffe399;">
-                <p style="color: #8a6d3b; font-weight: 500;">
-                    Tu solicitud está pendiente de aprobación por parte del abogado. La videollamada se habilitará una vez que sea aceptada.
-                </p>
-            </div>
         @endif
     </main>
-    <footer>Estudio Jurídico · Atención al Cliente</footer>
+        <footer>Estudio Jurídico · Atención al Cliente</footer>
 </body>
 </html>

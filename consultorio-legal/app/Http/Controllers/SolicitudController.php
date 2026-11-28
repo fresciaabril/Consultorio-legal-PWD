@@ -6,10 +6,8 @@ use App\Models\Solicitud;
 use App\Models\User; //comprueba si el correo ya tiene una cuenta
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\RateLimiter; //limita el envio de codigos
+use Illuminate\Support\Facades\URL;
 
 class SolicitudController extends Controller
 {
@@ -35,6 +33,11 @@ class SolicitudController extends Controller
 
         // Guardamos la solicitud en Aiven
         $solicitud = Solicitud::create($datos);
+        //Recargamos la solicitud con su stado inicial
+        $solicitud->refresh();
+
+        //Enviamos el correo de confirmacion
+        $this->enviarCorreoEstado($solicitud);
 
         // Redirigimos al seguimiento de esta solicitud
         return redirect()->route(
@@ -62,189 +65,45 @@ class SolicitudController extends Controller
         return view('solicitudes.seguimiento', compact('solicitud'));
     }
 
-    // Generar y enviar el código de verificación
-    public function enviarCodigo(string $token)
+    public function habilitarRegistro(Request $request, string $token)
     {
-        // Buscar la solicitud mediante su token privado
+        // Buscar la solicitud mediante su token
         $solicitud = Solicitud::where('token_seguimiento', $token)
             ->firstOrFail();
 
-        // Solo las solicitudes aceptadas pueden verificar su correo
+        // Comprobar que la solicitud esté aceptada
         if ($solicitud->estado !== 'aceptada') {
-            abort(403, 'La solicitud todavía no fue aceptada.');
+            abort(403, 'La solicitud no está aceptada.');
         }
 
-        // Si ya existe una cuenta, no generar otro código
+        // Comprobar que el cliente no tenga una cuenta
         if (User::where('email', $solicitud->email)->exists()) {
-            return redirect()->route('login')->with(
-                'exito',
-                'Este correo ya tiene una cuenta. Iniciá sesión.'
-            );
+            return redirect()->route('login')
+                ->with('exito', 'Este correo ya tiene una cuenta.');
         }
 
-        // Limitar los envíos por solicitud y por correo
-        $claveSolicitud = 'codigo-solicitud:' . $solicitud->id;
-        $claveCorreo = 'codigo-email:' . hash('sha256', strtolower($solicitud->email));
-
-        if (
-            RateLimiter::tooManyAttempts($claveSolicitud, 3) ||
-            RateLimiter::tooManyAttempts($claveCorreo, 5)
-        ) {
-            return back()->withErrors([
-                'codigo' => 'Solicitaste demasiados códigos. Esperá unos minutos antes de volver a intentar.'
-            ]);
-        }
-
-        // Contar los envíos durante una hora
-        RateLimiter::hit($claveSolicitud, 3600);
-        RateLimiter::hit($claveCorreo, 3600);
-
-        // Generar un código aleatorio de 6 dígitos
-        $codigo = (string) random_int(100000, 999999);
-
-        // Guardar el código protegido y su vencimiento
-        $solicitud->codigo_verificacion = Hash::make($codigo);
-        $solicitud->codigo_expira = now()->addMinutes(10);
-
-        // Reiniciar los intentos para el nuevo código
-        $solicitud->intentos_verificacion = 0;
-
+        // Marcar el correo como verificado
+        $solicitud->email_verificado = now();
         $solicitud->save();
 
-        // Enviar el código al correo de la solicitud
-        Mail::raw(
-            "Tu código de verificación para Consultorio Legal es: $codigo\n\n" .
-            "Este código vence en 10 minutos.",
-            function ($mensaje) use ($solicitud) {
-                $mensaje->to($solicitud->email)
-                    ->subject('Código de verificación - Consultorio Legal');
-            }
-        );
+        // Guardar el permiso de registro en la sesión
+        $request->session()->regenerate();
+        $request->session()->put('solicitud_verificada', $token);
 
-        return redirect()->route(
-            'solicitudes.seguimiento',
-            ['token' => $token]
-        )->with(
-            'exito',
-            'Se generó tu código de verificación. Revisá tu correo.'
-        );
-    }
-
-    // Verificar el código ingresado por el cliente
-    public function verificarCodigo(Request $request, string $token)
-    {
-        // Comprobar que se ingresaron exactamente 6 números
-        $datos = $request->validate([
-            'codigo' => 'required|digits:6',
+        // Volver a la pantalla de seguimiento
+        return redirect()->route('solicitudes.seguimiento', [
+            'token' => $token
         ]);
-
-        // Transacción para evitar verificaciones simultáneas
-        $resultado = DB::transaction(function () use ($datos, $token) {
-
-            $solicitud = Solicitud::where('token_seguimiento', $token)
-                ->lockForUpdate()
-                ->firstOrFail();
-
-            // La solicitud debe estar aceptada
-            if ($solicitud->estado !== 'aceptada') {
-                abort(403, 'La solicitud no está aceptada.');
-            }
-
-            // Si ya existe una cuenta, no permitir otra
-            if (User::where('email', $solicitud->email)->exists()) {
-                return [
-                    'error' => 'Este correo ya tiene una cuenta. Iniciá sesión.'
-                ];
-            }
-
-            // Comprobar si alcanzó el máximo de intentos
-            if ($solicitud->intentos_verificacion >= 5) {
-                return [
-                    'error' => 'Superaste los 5 intentos permitidos. Solicitá un código nuevo.'
-                ];
-            }
-
-            // Comprobar que exista un código y que no haya vencido
-            if (
-                !$solicitud->codigo_verificacion ||
-                !$solicitud->codigo_expira ||
-                now()->greaterThan($solicitud->codigo_expira)
-            ) {
-                return [
-                    'error' => 'El código venció o no existe. Solicitá uno nuevo.'
-                ];
-            }
-
-            // Comparar el código ingresado con el hash de Aiven
-            if (!Hash::check($datos['codigo'], $solicitud->codigo_verificacion)) {
-
-                // Sumar un intento fallido
-                $solicitud->intentos_verificacion++;
-
-                // Si llegó a 5 intentos, invalidar el código
-                if ($solicitud->intentos_verificacion >= 5) {
-                    $solicitud->codigo_verificacion = null;
-                    $solicitud->codigo_expira = null;
-
-                    $solicitud->save();
-
-                    return [
-                        'error' => 'Superaste los 5 intentos permitidos. Solicitá un código nuevo.'
-                    ];
-                }
-
-                $solicitud->save();
-
-                return [
-                    'error' => 'El código ingresado es incorrecto. Intentá nuevamente.'
-                ];
-            }
-
-            // Marcar el correo como verificado
-            $solicitud->email_verificado = now();
-
-            // Invalidar el código para que no se reutilice
-            $solicitud->codigo_verificacion = null;
-            $solicitud->codigo_expira = null;
-
-            // Reiniciar el contador
-            $solicitud->intentos_verificacion = 0;
-
-            $solicitud->save();
-
-            return [
-                'verificado' => true,
-                'exito' => '¡Correo verificado correctamente! Ya podés continuar con el registro.'
-            ];
-        });
-
-        // Mostrar un error si el código es incorrecto
-        if (isset($resultado['error'])) {
-            return back()->withErrors([
-                'codigo' => $resultado['error']
-            ]);
-        }
-
-        // Guardar en sesión la solicitud que verificó el cliente
-        if (!empty($resultado['verificado'])) {
-            $request->session()->regenerate();
-
-            $request->session()->put(
-                'solicitud_verificada',
-                $token
-            );
-        }
-
-        return back()->with(
-            'exito',
-            $resultado['exito']
-        );
     }
+
 
     // Aceptar una solicitud
     public function aceptar(Solicitud $solicitud)
     {
         $solicitud->update(['estado' => 'aceptada']);
+
+        //enviar coreo de aceptacion
+        $this->enviarCorreoEstado($solicitud);
 
         return back();
     }
@@ -254,6 +113,49 @@ class SolicitudController extends Controller
     {
         $solicitud->update(['estado' => 'rechazada']);
 
+        $this->enviarCorreoEstado($solicitud);
+
         return back();
+    }
+
+    private function enviarCorreoEstado(Solicitud $solicitud)
+    {
+        $asunto = match ($solicitud->estado) {
+            'pendiente' => 'Solicitud recibida - Consultorio Legal',
+            'aceptada' => 'Tu solicitud fue aceptada - Consultorio Legal',
+            'rechazada' => 'Estado de tu solicitud - Consultorio Legal',
+            default => 'Consultorio Legal',
+        };
+
+        // Generamos el enlace de acuerdo al estado
+        if ($solicitud->estado === 'aceptada') {
+            $enlace = URL::temporarySignedRoute(
+                'solicitudes.habilitarRegistro',
+                now()->addDays(7),
+                ['token' => $solicitud->token_seguimiento]
+            );
+        } else {
+            $enlace = route('solicitudes.seguimiento', [
+                'token' => $solicitud->token_seguimiento
+            ]);
+        }
+
+        try {
+            Mail::send(
+                'emails.estado_solicitud',
+                [
+                    'solicitud' => $solicitud,
+                    'enlace' => $enlace
+                ],
+                function ($mensaje) use ($solicitud, $asunto) {
+                    $mensaje->to($solicitud->email)
+                        ->subject($asunto);
+                }
+            );
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error(
+                'No se pudo enviar el correo de la solicitud ID: ' . $solicitud->id
+            );
+        }
     }
 }
